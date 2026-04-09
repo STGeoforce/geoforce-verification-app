@@ -1092,47 +1092,67 @@ async function runManualVerify(){
   mvSetStep(3,'⚙️','Analysing…','running');
   await new Promise(r => setTimeout(r, 400));
 
-  const dateLabel = new Date(date).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
-  let job = {
-    id: `JB-${date.replace(/-/g,'')}-${assetId.replace(/\W/g,'')}`,
-    assetId,
-    driver: driver || 'Unassigned',
-    asset:  assetName,
-    esn,
-    date:   dateLabel,
-    status: 'progress',
-    reportedHrs: repHrs ? repHrs + 'h' : '—',
-    gpsHrs: '—',
-    invoice: invoice ? '$' + parseFloat(invoice).toLocaleString() : '—',
-    arrReported: startTime,
-    arrGPS: '—',
-    depReported: endTime,
-    depGPS: '—',
-    summary: readings.length === 0 ? 'No GPS readings found for this time window. Check ESN and time range.' : '',
-    flags: [],
-    timeline: [],
-    gpsMetrics: { distance:'—', driveTime:'—', timeOnSite:'—', stops: 0 },
-    jobSite: { name: 'Job Site', coords: [31.9973,-102.0779] },
-    outbound: [], returning: [], stopLocations: []
-  };
+  try {
+    const dateLabel = new Date(date + 'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+    let job = {
+      id: `JB-${date.replace(/-/g,'')}-${assetId.replace(/[^A-Za-z0-9]/g,'')}`,
+      assetId,
+      driver: driver || 'Unassigned',
+      asset:  assetName,
+      esn,
+      date:   dateLabel,
+      status: 'processing',
+      // Old format fields renderRow expects
+      reportedHours: repHrs ? repHrs + 'h' : '—',
+      invoiceAmount: invoice ? '$' + parseFloat(invoice).toLocaleString() : '—',
+      jobSite: 'Job Site TBD',
+      aiSummary: '',
+      issues: [],
+      // New format fields for detail view
+      reportedHrs: repHrs ? repHrs + 'h' : '—',
+      gpsHrs: '—',
+      invoice: invoice ? '$' + parseFloat(invoice).toLocaleString() : '—',
+      arrReported: startTime,
+      arrGPS: '—',
+      depReported: endTime,
+      depGPS: '—',
+      flags: [],
+      timeline: [],
+      gpsMetrics: { distance:'—', driveTime:'—', timeOnSite:'—', stops: 0 },
+      jobSiteObj: { name: 'Job Site', coords: [31.9973,-102.0779] },
+      outbound: [], returning: [], stopLocations: []
+    };
 
-  if (readings.length === 0){
-    job.status = 'flagged';
-    job.flags.push({ severity:'medium', type:'No GPS Data',
-      title:'No readings found for this time window',
-      desc:'Check that the ESN is correct and the time range matches when the device was active.' });
-  } else {
-    job = analyseReadings(readings, job);
+    if (readings.length === 0){
+      job.status = 'flagged';
+      job.issues.push({ severity:'medium', type:'No GPS Data',
+        desc:'No readings found for this time window. Check ESN and time range.' });
+      job.aiSummary = 'No GPS readings found. Check ESN and time range.';
+    } else {
+      job = analyseReadings(readings, job);
+      // Sync issues from flags for renderRow
+      job.issues = (job.flags||[]).map(f => ({ type: f.type, severity: f.severity==='critical'?'high':'medium', desc: f.desc }));
+      job.aiSummary = job.summary || '';
+      job.jobSite = job.jobSiteObj?.name || 'Job Site';
+      job.reportedHours = job.reportedHrs;
+      job.invoiceAmount = job.invoice;
+    }
+
+    TICKETS.unshift(job);
+    renderList();
+    updateStats();
+    mvSetStep(3,'✅',`Done — ${readings.length} readings analysed`,'done');
+    await new Promise(r => setTimeout(r, 800));
+    closeManualVerify();
+    showDetail(job.id);
+
+  } catch(e) {
+    console.error('Analysis error:', e);
+    mvSetStep(3,'❌','Analysis failed: ' + e.message,'error');
+    document.getElementById('mvRunBtn').disabled = false;
+    document.getElementById('mvRunBtn').textContent = '🔍 Retry';
+    document.getElementById('mvForm').style.opacity = '1';
   }
-
-  TICKETS.unshift(job);
-  renderList();
-  updateStats();
-  mvSetStep(3,'✅','Done','done');
-
-  await new Promise(r => setTimeout(r, 600));
-  closeManualVerify();
-  showDetail(job.id);
 }
 
 // ─── INIT ──────────────────────────────────────────────────────────────────────
