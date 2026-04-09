@@ -980,83 +980,167 @@ function buildJob({esn, assetName, driver, date, start, end, repHrs, invoice, re
     return job;
   }
 
-  // Parse real Geoforce reading format
-  // coordinates: [longitude, latitude] — swap to [lat, lng] for Leaflet
+  // Parse Geoforce format: coordinates=[longitude, latitude] → swap to [lat, lng] for Leaflet
   const pts = readings
     .map(r=>({
-      lat: r.position?.coordinates?.[1] ?? null,
-      lng: r.position?.coordinates?.[0] ?? null,
-      ts:  new Date(r.timestamp||r.received).getTime(),
+      lat:     r.position?.coordinates?.[1] ?? null,
+      lng:     r.position?.coordinates?.[0] ?? null,
+      ts:      new Date(r.timestamp||r.received).getTime(),
       speed:   parseFloat(r.status?.speed||0),
       stopped: r.status?.stopped==='true'||r.status?.stopped===true
     }))
     .filter(p=>p.lat!==null&&p.lng!==null&&!isNaN(p.ts))
     .sort((a,b)=>a.ts-b.ts);
 
-  if(pts.length<2){
-    job.summary='Too few GPS points to analyse. Check time range.';
-    return job;
-  }
+  if(pts.length<2){ job.summary='Too few GPS points to analyse.'; return job; }
 
-  const first=pts[0], last=pts[pts.length-1];
-  const totalMs  = last.ts-first.ts;
-  const totalHrs = Math.round((totalMs/3600000)*10)/10;
+  // ── DETECT ALL STOPS ──────────────────────────────────────────────────────
+  // A stop = consecutive readings where speed < 2 mph or stopped=true
+  const STOP_MIN_MS  = 10*60*1000;  // ignore stops under 10 min (traffic lights etc)
+  const JOBSITE_MS   = 30*60*1000;  // job site = first stop >= 30 min
+  const UNAUTH_MS    = 15*60*1000;  // flag any other stop >= 15 min
 
-  job.gpsHrs  = totalHrs+'h';
-  job.arrGPS  = new Date(first.ts).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
-  job.depGPS  = new Date(last.ts).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
-  job.outbound = pts.map(p=>[p.lat,p.lng]);
-
-  // Detect stops > 15 min
-  const STOP_MS = 15*60*1000;
-  const stops=[]; let stopStart=null, stopLat=null, stopLng=null;
+  const allStops=[]; let sStart=null, sLat=null, sLng=null;
   for(let i=0;i<pts.length;i++){
     const p=pts[i];
     if(p.stopped||p.speed<2){
-      if(!stopStart){stopStart=p.ts;stopLat=p.lat;stopLng=p.lng;}
+      if(!sStart){sStart=p.ts;sLat=p.lat;sLng=p.lng;}
     } else {
-      if(stopStart){
-        const dur=p.ts-stopStart;
-        if(dur>STOP_MS) stops.push({coords:[stopLat,stopLng],durationMs:dur,
-          arrival:new Date(stopStart).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'}),
+      if(sStart){
+        const dur=p.ts-sStart;
+        if(dur>=STOP_MIN_MS) allStops.push({
+          coords:[sLat,sLng], durationMs:dur,
+          arrival:new Date(sStart).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'}),
           departure:new Date(p.ts).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'}),
-          durationStr:Math.round(dur/60000)+' min'});
-        stopStart=null;
+          durationStr:Math.round(dur/60000)+' min',
+          arrivalTs:sStart, departureTs:p.ts
+        });
+        sStart=null;
       }
     }
   }
+  // Catch a stop still ongoing at end of window
+  if(sStart){
+    const dur=pts[pts.length-1].ts-sStart;
+    if(dur>=STOP_MIN_MS) allStops.push({
+      coords:[sLat,sLng], durationMs:dur,
+      arrival:new Date(sStart).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'}),
+      departure:'—', durationStr:Math.round(dur/60000)+' min',
+      arrivalTs:sStart, departureTs:pts[pts.length-1].ts
+    });
+  }
 
-  job.stopLocations = stops.map(s=>({coords:s.coords,label:'Detected Stop'}));
-  job.gpsMetrics = {distance:'—',driveTime:'—',timeOnSite:totalHrs+'h',stops:stops.length};
+  // ── IDENTIFY JOB SITE ─────────────────────────────────────────────────────
+  // Job site = first stop >= 30 min (driver left yard, drove, arrived at well)
+  const jobSiteStop = allStops.find(s=>s.durationMs>=JOBSITE_MS)||null;
+  const unauthorizedStops = allStops.filter(s=>s!==jobSiteStop && s.durationMs>=UNAUTH_MS);
 
-  job.timeline=[
-    {type:'yard',label:'Home Yard',address:'Midland, TX',arrival:job.arrGPS,departure:job.arrGPS,duration:'—',flagged:false},
-    ...stops.map(s=>({type:'stop',label:'Detected Stop',address:'—',arrival:s.arrival,departure:s.departure,duration:s.durationStr,flagged:true})),
-    {type:'site',label:'Job Site',address:'—',arrival:job.arrGPS,departure:job.depGPS,duration:totalHrs+'h',flagged:false},
-    {type:'yard',label:'Home Yard',address:'Midland, TX',arrival:job.depGPS,departure:'—',duration:'—',flagged:false}
-  ];
+  // ── IDENTIFY DEPARTURE FROM YARD ──────────────────────────────────────────
+  // Yard departure = first point where device starts moving
+  let yardDeparturePt = pts[0];
+  for(let i=0;i<pts.length;i++){
+    if(!pts[i].stopped && pts[i].speed>=2){ yardDeparturePt=pts[i]; break; }
+  }
+  const yardDepartureTime = new Date(yardDeparturePt.ts).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
 
-  // Billing comparison
-  const repH=parseFloat(repHrs);
+  // Last movement point = yard return
+  let yardReturnPt = pts[pts.length-1];
+  for(let i=pts.length-1;i>=0;i--){
+    if(!pts[i].stopped && pts[i].speed>=2){ yardReturnPt=pts[i]; break; }
+  }
+  const yardReturnTime = new Date(yardReturnPt.ts).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+
+  // ── CALCULATE TIMES ───────────────────────────────────────────────────────
+  // GPS hours = time from first movement to last movement (total trip)
+  const totalTripMs  = yardReturnPt.ts - yardDeparturePt.ts;
+  const totalTripHrs = Math.round((totalTripMs/3600000)*10)/10;
+
+  // Time on site = job site stop duration (null if no long stop found)
+  const timeOnSiteMs  = jobSiteStop ? jobSiteStop.durationMs : null;
+  const timeOnSiteHrs = timeOnSiteMs ? Math.round((timeOnSiteMs/3600000)*10)/10 : null;
+
+  job.gpsHrs  = totalTripHrs+'h';
+  job.arrGPS  = jobSiteStop ? jobSiteStop.arrival : yardDepartureTime;
+  job.depGPS  = jobSiteStop ? jobSiteStop.departure : yardReturnTime;
+
+  // Update job site coords if we found a stop
+  if(jobSiteStop){
+    job.jobSite = {name:'Job Site (GPS detected)', coords:jobSiteStop.coords};
+  }
+
+  // Route = all points
+  job.outbound  = pts.map(p=>[p.lat,p.lng]);
+  job.returning = [];
+
+  // Stop markers = unauthorized stops only
+  job.stopLocations = unauthorizedStops.map(s=>({coords:s.coords,label:'Unauthorized Stop'}));
+
+  job.gpsMetrics = {
+    distance:'—',
+    driveTime:'—',
+    timeOnSite: timeOnSiteHrs ? timeOnSiteHrs+'h' : totalTripHrs+'h',
+    stops: unauthorizedStops.length
+  };
+
+  // ── BUILD TIMELINE ────────────────────────────────────────────────────────
+  const tlEvents=[];
+  tlEvents.push({type:'yard',label:'Departed Home Yard',address:'Midland, TX',
+    arrival:'—',departure:yardDepartureTime,duration:'—',flagged:false});
+
+  // Unauthorized stops before job site
+  const beforeSite = unauthorizedStops.filter(s=>!jobSiteStop||s.arrivalTs<jobSiteStop.arrivalTs);
+  beforeSite.forEach(s=>tlEvents.push({type:'stop',label:'Unauthorized Stop',address:'Before job site',
+    arrival:s.arrival,departure:s.departure,duration:s.durationStr,flagged:true}));
+
+  // Job site
+  if(jobSiteStop){
+    tlEvents.push({type:'site',label:'Job Site (GPS detected)',address:'First major stop detected',
+      arrival:jobSiteStop.arrival,departure:jobSiteStop.departure,
+      duration:jobSiteStop.durationStr,flagged:false});
+  }
+
+  // Unauthorized stops after job site
+  const afterSite = unauthorizedStops.filter(s=>jobSiteStop&&s.arrivalTs>jobSiteStop.departureTs);
+  afterSite.forEach(s=>tlEvents.push({type:'stop',label:'Unauthorized Stop',address:'After job site',
+    arrival:s.arrival,departure:s.departure,duration:s.durationStr,flagged:true}));
+
+  tlEvents.push({type:'yard',label:'Returned Home Yard',address:'Midland, TX',
+    arrival:yardReturnTime,departure:'—',duration:'—',flagged:false});
+
+  job.timeline = tlEvents;
+
+  // ── FLAGS ─────────────────────────────────────────────────────────────────
+  // Billing: compare reported hours vs time on site (not total trip)
+  const repH = parseFloat(repHrs);
+  const compareHrs = timeOnSiteHrs || totalTripHrs;
   if(!isNaN(repH)){
-    const diff=Math.round((totalHrs-repH)*10)/10;
+    const diff=Math.round((compareHrs-repH)*10)/10;
     if(Math.abs(diff)>=0.5) job.flags.push({
       severity:Math.abs(diff)>=1?'critical':'medium',
       type:'Billing Mismatch',
       title:`Hours discrepancy: ${diff>0?'+':''}${diff}h`,
-      desc:`Reported ${repH}h but GPS confirms ${totalHrs}h. Difference of ${Math.abs(diff)}h.`
+      desc:`Reported ${repH}h but GPS confirms ${compareHrs}h on site. Difference of ${Math.abs(diff)}h.`
     });
   }
-  if(stops.length>0) job.flags.push({
+
+  // Unauthorized stops
+  if(unauthorizedStops.length>0) job.flags.push({
     severity:'medium',type:'Unauthorized Stop',
-    title:`${stops.length} stop${stops.length>1?'s':''} detected`,
-    desc:stops.map(s=>`Stop of ${s.durationStr} at ${s.arrival}`).join('; ')
+    title:`${unauthorizedStops.length} stop${unauthorizedStops.length>1?'s':''} detected`,
+    desc:unauthorizedStops.map(s=>`${s.durationStr} stop at ${s.arrival}`).join('; ')
+  });
+
+  // No identifiable job site
+  if(!jobSiteStop) job.flags.push({
+    severity:'medium',type:'No Job Site Detected',
+    title:'Could not identify job site from GPS',
+    desc:'No stop longer than 30 minutes found. The device may have been moving the entire time, or the time window may need adjustment.'
   });
 
   job.status  = job.flags.length>0 ? 'flagged' : 'verified';
   job.summary = job.flags.length>0
     ? `GPS analysis found ${job.flags.length} issue${job.flags.length>1?'s':''}. Review before approving invoice.`
-    : `GPS data analysed. ${totalHrs}h confirmed. No unauthorized stops detected.`;
+    : `GPS data confirmed. ${timeOnSiteHrs||totalTripHrs}h on site. No unauthorized stops detected.`;
 
   return job;
 }
