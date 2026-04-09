@@ -829,11 +829,20 @@ function renderMap(job){
     mapLayers.push(L.polyline(job.returning,{color:'#fff',weight:7,opacity:.4}).addTo(detailMap));
     mapLayers.push(L.polyline(job.returning,{color:'#f59e0b',weight:5,dashArray:'10 6'}).addTo(detailMap).bindTooltip('↩ Return',{sticky:true}));
   }
-  mapLayers.push(L.marker(HOME_YARD.coords,{icon:mkIcon('yard')}).addTo(detailMap).bindPopup(`<b>🏠 ${HOME_YARD.name}</b>`));
+  // Use first GPS point as start (actual home yard), last GPS point as return
+  const startCoords = job.outbound?.length > 0 ? job.outbound[0] : job.jobSite.coords;
+  const endCoords   = job.returning?.length > 0 ? job.returning[job.returning.length-1]
+                    : job.outbound?.length > 0  ? job.outbound[job.outbound.length-1]
+                    : job.jobSite.coords;
+
+  mapLayers.push(L.marker(startCoords,{icon:mkIcon('yard')}).addTo(detailMap).bindPopup('<b>🏠 Home Yard (GPS start)</b>'));
   mapLayers.push(L.marker(job.jobSite.coords,{icon:mkIcon('site')}).addTo(detailMap).bindPopup(`<b>📍 ${job.jobSite.name}</b>`));
+  // Only show end marker if meaningfully different from start (> ~1 mile)
+  const dist = Math.abs(endCoords[0]-startCoords[0]) + Math.abs(endCoords[1]-startCoords[1]);
+  if(dist > 0.02) mapLayers.push(L.marker(endCoords,{icon:mkIcon('yard')}).addTo(detailMap).bindPopup('<b>🏠 Home Yard (GPS end)</b>'));
   (job.stopLocations||[]).forEach(s=>mapLayers.push(L.marker(s.coords,{icon:mkIcon('stop')}).addTo(detailMap).bindPopup(`<b>⚠️ ${s.label}</b>`)));
 
-  const all=[...(job.outbound||[]),...(job.returning||[]),HOME_YARD.coords,job.jobSite.coords];
+  const all=[...(job.outbound||[]),...(job.returning||[]),startCoords,job.jobSite.coords];
   if(all.length) detailMap.fitBounds(L.latLngBounds(all),{padding:[30,30]});
   detailMap.invalidateSize();
 }
