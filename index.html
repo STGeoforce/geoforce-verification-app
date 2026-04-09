@@ -7,1270 +7,1253 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.1.1/tesseract.min.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
 *{margin:0;padding:0;box-sizing:border-box;}
 :root{
-  --bg:#f4f6f9;--surface:#fff;--surface2:#f9fafb;--border:#e5e9f0;--border2:#d1d9e6;
-  --accent:#0C6FE3;--accent-dim:rgba(12,111,227,0.08);--accent-hover:#0a5ec4;
-  --danger:#dc2626;--danger-dim:rgba(220,38,38,0.07);--danger-mid:rgba(220,38,38,0.15);
-  --warning:#d97706;--warning-dim:rgba(217,119,6,0.08);--warning-mid:rgba(217,119,6,0.15);
-  --success:#16a34a;--success-dim:rgba(22,163,74,0.08);--success-mid:rgba(22,163,74,0.15);
-  --text:#0f172a;--text-dim:#64748b;--text-mid:#475569;
-  --mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;
-  --r:8px;--sh:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.04);
-  --sh-md:0 4px 12px rgba(0,0,0,.10),0 2px 4px rgba(0,0,0,.06);
-  --sh-lg:0 12px 32px rgba(0,0,0,.12),0 4px 8px rgba(0,0,0,.06);
+  --bg:#f5f6f8;--surface:#fff;--border:#e5e7eb;--border-light:#f0f1f3;
+  --accent:#0C6FE3;--accent-dim:rgba(12,111,227,0.08);
+  --danger:#dc2626;--danger-dim:#fef2f2;--danger-border:#fecaca;
+  --warning:#d97706;--warning-dim:#fffbeb;--warning-border:#fde68a;
+  --success:#16a34a;--success-dim:#f0fdf4;--success-border:#bbf7d0;
+  --text:#111827;--text-dim:#6b7280;--text-mid:#374151;
+  --mono:'DM Mono',monospace;
+  --sh:0 1px 3px rgba(0,0,0,.08);--sh-md:0 4px 12px rgba(0,0,0,.08);
 }
-body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:100vh;}
-.topbar{height:52px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 24px;gap:12px;position:sticky;top:0;z-index:100;box-shadow:var(--sh);}
-.tb-logo{width:32px;height:32px;background:var(--accent);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
-.tb-brand{display:flex;flex-direction:column;gap:0;}
-.tb-title{font-size:14px;font-weight:700;letter-spacing:-.2px;}
-.tb-sub{font-size:10px;color:var(--text-dim);}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+
+/* ── TOPBAR ── */
+.topbar{height:52px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 24px;gap:10px;position:sticky;top:0;z-index:100;box-shadow:var(--sh);}
+.tb-icon{width:28px;height:28px;background:var(--accent);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px;}
+.tb-title{font-size:14px;font-weight:700;}
+.tb-sub{font-size:11px;color:var(--text-dim);}
 .tb-right{margin-left:auto;display:flex;gap:8px;}
-.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:6px;font-family:var(--sans);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;border:none;}
-.btn-primary{background:var(--accent);color:#fff;} .btn-primary:hover{background:var(--accent-hover);}
-.btn-outline{background:transparent;color:var(--text-mid);border:1px solid var(--border2);} .btn-outline:hover{border-color:var(--accent);color:var(--accent);}
-.btn-success{background:var(--success);color:#fff;} .btn-success:hover{background:#15803d;}
-.btn-warn{background:#fef3c7;color:#92400e;border:1px solid #fcd34d;}
-#view-list{display:block;} #view-detail{display:none;}
-.page{max-width:1100px;margin:0 auto;padding:28px 24px;}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:6px;font-family:'Inter',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;border:1px solid var(--border);background:var(--surface);color:var(--text-mid);}
+.btn:hover{border-color:var(--accent);color:var(--accent);}
+.btn:disabled{opacity:.4;cursor:not-allowed;pointer-events:none;}
+.btn-primary{background:var(--text);color:#fff;border-color:var(--text);} .btn-primary:hover{background:#1f2937;color:#fff;}
+.btn-success{background:var(--success);color:#fff;border-color:var(--success);} .btn-success:hover{background:#15803d;color:#fff;}
 
-/* STATS */
-.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:28px;}
-.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px 20px;box-shadow:var(--sh);}
-.sc-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;}
-.sc-label{font-size:12px;font-weight:500;color:var(--text-dim);}
-.sc-num{font-family:var(--mono);font-size:32px;font-weight:600;line-height:1;margin-bottom:3px;}
-.sc-sub{font-size:11px;color:var(--text-dim);}
-.sc-total .sc-num{color:var(--text);} .sc-verified .sc-num{color:var(--success);} .sc-flagged .sc-num{color:var(--danger);} .sc-processing .sc-num{color:var(--accent);}
+/* ── PAGES ── */
+#page-list{display:block;} #page-detail{display:none;}
+.page{max-width:1100px;margin:0 auto;padding:24px;}
 
-/* QUEUE */
-.queue-hdr{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:14px;}
-.queue-hdr-left h2{font-size:22px;font-weight:700;letter-spacing:-.4px;margin-bottom:2px;}
-.queue-hdr-left p{font-size:13px;color:var(--text-dim);}
-.bulk-bar{display:flex;align-items:center;gap:10px;padding:8px 14px;background:var(--accent-dim);border:1px solid rgba(12,111,227,.2);border-radius:6px;margin-bottom:10px;font-size:12px;color:var(--accent);font-weight:600;}
-.bulk-bar .btn{margin-left:auto;}
+/* ── STATS ── */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px;}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px 18px;box-shadow:var(--sh);}
+.sc-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+.sc-label{font-size:12px;color:var(--text-dim);font-weight:500;}
+.sc-num{font-family:var(--mono);font-size:28px;font-weight:700;line-height:1;}
+.sc-sub{font-size:11px;color:var(--text-dim);margin-top:3px;}
+.sc-total .sc-num{color:var(--text);} .sc-verified .sc-num{color:var(--success);}
+.sc-flagged .sc-num{color:var(--warning);} .sc-processing .sc-num{color:var(--accent);}
+
+/* ── QUEUE ── */
+.queue-hdr{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px;}
+.queue-title{font-size:20px;font-weight:700;}
+.queue-sub{font-size:13px;color:var(--text-dim);margin-top:2px;}
+.filter-bar{display:flex;align-items:center;gap:8px;margin-bottom:12px;}
+.search-wrap{position:relative;flex:1;}
+.search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:13px;color:var(--text-dim);pointer-events:none;}
+.search-el{width:100%;padding:8px 10px 8px 32px;border:1px solid var(--border);border-radius:6px;font-family:'Inter',sans-serif;font-size:13px;outline:none;}
+.search-el:focus{border-color:var(--accent);}
+.ftabs{display:flex;gap:4px;}
+.ftab{padding:6px 12px;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--text-dim);font-size:12px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;}
+.ftab.active{background:var(--accent-dim);border-color:var(--accent);color:var(--accent);}
+.bulk-bar{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+.bulk-check{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text-mid);cursor:pointer;}
+.bulk-check input{width:15px;height:15px;accent-color:var(--accent);cursor:pointer;}
+
+/* ── TICKET ROWS ── */
 .ticket-list{display:flex;flex-direction:column;gap:10px;}
+.trow{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px 18px;box-shadow:var(--sh);display:grid;grid-template-columns:20px 5px 1fr auto;gap:0 12px;align-items:start;cursor:default;transition:all .15s;}
+.trow:hover{border-color:rgba(12,111,227,.3);box-shadow:var(--sh-md);}
+.trow.selected{border-color:var(--accent);background:#fafcff;}
+.tr-check{padding-top:2px;}
+.tr-check input{width:15px;height:15px;accent-color:var(--accent);cursor:pointer;}
+.tr-stripe{width:4px;border-radius:4px;align-self:stretch;}
+.str-verified{background:var(--success);} .str-flagged{background:var(--warning);}
+.str-processing{background:var(--accent);} .str-pending{background:#d1d5db;}
+.tr-body{min-width:0;}
+.tr-head{display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap;}
+.tr-id{font-family:var(--mono);font-size:13px;font-weight:600;color:var(--accent);}
+.badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;text-transform:uppercase;letter-spacing:.4px;}
+.badge-verified{background:var(--success-dim);color:var(--success);border:1px solid var(--success-border);}
+.badge-flagged{background:var(--warning-dim);color:var(--warning);border:1px solid var(--warning-border);}
+.badge-processing{background:var(--accent-dim);color:var(--accent);border:1px solid rgba(12,111,227,.2);}
+.badge-pending{background:#f9fafb;color:var(--text-dim);border:1px solid var(--border);}
+.tr-meta{font-size:12px;color:var(--text-dim);margin-bottom:8px;}
+.tr-details{display:grid;grid-template-columns:1fr 140px 140px;gap:8px;margin-bottom:8px;}
+.td-lbl{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--text-dim);margin-bottom:2px;}
+.td-val{font-size:13px;font-weight:600;}
+.tr-issues{display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+.issue-cnt{font-size:12px;color:var(--warning);font-weight:600;}
+.itag{font-size:10px;padding:2px 7px;border-radius:4px;background:var(--warning-dim);color:var(--warning);border:1px solid var(--warning-border);font-weight:600;}
+.itag.high{background:var(--danger-dim);color:var(--danger);border-color:var(--danger-border);}
+.tr-summary{font-size:12px;color:var(--text-dim);margin-top:7px;font-style:italic;line-height:1.5;border-top:1px solid var(--border-light);padding-top:7px;}
+.tr-right{display:flex;flex-direction:column;align-items:flex-end;gap:8px;padding-top:2px;}
+.tr-invoice{font-size:16px;font-weight:700;font-family:var(--mono);}
+.tr-invoice-lbl{font-size:10px;color:var(--text-dim);}
+.btn-view{padding:6px 12px;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--text-mid);font-size:12px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;white-space:nowrap;}
+.btn-view:hover{border-color:var(--accent);color:var(--accent);}
 
-/* TICKET ROW */
-.trow{background:var(--surface);border:1px solid var(--border);border-left:4px solid transparent;border-radius:var(--r);padding:16px 18px;box-shadow:var(--sh);transition:all .15s;}
-.trow:hover{box-shadow:var(--sh-md);border-color:var(--border2);}
-.trow.flagged{border-left-color:var(--danger);}
-.trow.verified{border-left-color:var(--success);}
-.trow.processing{border-left-color:var(--accent);}
-.trow-top{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
-.trow-id{font-family:var(--mono);font-size:14px;font-weight:600;}
-.badge{padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;display:inline-flex;align-items:center;gap:3px;}
-.badge-flagged{background:var(--danger-mid);color:var(--danger);border:1px solid rgba(220,38,38,.25);}
-.badge-verified{background:var(--success-mid);color:var(--success);border:1px solid rgba(22,163,74,.25);}
-.badge-processing{background:var(--accent-dim);color:var(--accent);border:1px solid rgba(12,111,227,.25);}
-.badge-pending{background:#f1f5f9;color:var(--text-dim);border:1px solid var(--border);}
-.trow-meta{font-size:12px;color:var(--text-dim);}
-.trow-actions{margin-left:auto;display:flex;gap:6px;}
-.vd-btn{display:flex;align-items:center;gap:4px;font-size:12px;font-weight:600;color:var(--accent);padding:5px 11px;border-radius:5px;border:1px solid rgba(12,111,227,.2);background:var(--accent-dim);cursor:pointer;transition:all .15s;}
-.vd-btn:hover{background:var(--accent);color:#fff;}
-.del-btn{padding:5px 8px;border-radius:5px;border:1px solid var(--border);background:transparent;cursor:pointer;font-size:13px;color:var(--text-dim);transition:all .15s;}
-.del-btn:hover{background:var(--danger-dim);border-color:rgba(220,38,38,.3);color:var(--danger);}
-.trow-body{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:10px;padding-left:26px;}
-.tbi label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--text-dim);display:block;margin-bottom:3px;}
-.tbi span{font-size:13px;font-weight:500;}
-.issue-area{padding-left:26px;margin-bottom:8px;}
-.issue-cnt{font-size:12px;color:var(--text-mid);margin-bottom:5px;display:flex;align-items:center;gap:5px;}
-.issue-tags{display:flex;flex-wrap:wrap;gap:4px;}
-.itag{padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600;background:var(--warning-dim);color:var(--warning);border:1px solid rgba(217,119,6,.2);}
-.itag.critical{background:var(--danger-dim);color:var(--danger);border-color:rgba(220,38,38,.2);}
-.ai-sum{padding:9px 13px;background:var(--surface2);border-radius:5px;font-size:12px;color:var(--text-mid);line-height:1.5;margin-left:26px;border-left:3px solid var(--border2);font-style:italic;}
-.ai-sum.flagged-sum{border-left-color:var(--warning);background:#fffbeb;}
+/* ── DETAIL PAGE ── */
+.detail-topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:12px 24px;display:flex;align-items:center;gap:12px;position:sticky;top:52px;z-index:90;box-shadow:var(--sh);}
+.d-id{font-family:var(--mono);font-size:16px;font-weight:600;}
+.issues-pill{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;background:var(--warning-dim);color:var(--warning);border:1px solid var(--warning-border);display:flex;align-items:center;gap:4px;}
+.d-actions{margin-left:auto;display:flex;gap:8px;}
+.detail-content{max-width:1100px;margin:0 auto;padding:24px;display:flex;flex-direction:column;gap:18px;}
 
-/* DETAIL */
-.detail-page{max-width:1100px;margin:0 auto;padding:24px 24px 60px;}
-.dtop{display:flex;align-items:flex-start;gap:12px;margin-bottom:20px;flex-wrap:wrap;}
-.back-btn{display:flex;align-items:center;gap:5px;padding:6px 12px;border-radius:6px;border:1px solid var(--border2);background:var(--surface);font-family:var(--sans);font-size:12px;font-weight:600;cursor:pointer;color:var(--text-mid);box-shadow:var(--sh);transition:all .15s;}
-.back-btn:hover{border-color:var(--accent);color:var(--accent);}
-.dtop-info{}
-.dtop-id{font-family:var(--mono);font-size:20px;font-weight:700;letter-spacing:-.3px;display:flex;align-items:center;gap:10px;}
-.dtop-meta{font-size:13px;color:var(--text-dim);margin-top:3px;}
-.dtop-right{margin-left:auto;display:flex;gap:8px;}
-.ibanner{background:#fff8f8;border:1px solid rgba(220,38,38,.2);border-radius:var(--r);padding:16px 20px;margin-bottom:18px;}
-.ibanner-top{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
-.ibanner-title{font-size:14px;font-weight:700;color:var(--danger);flex:1;}
-.sev-pill{padding:3px 9px;border-radius:4px;font-size:10px;font-weight:700;}
-.sev-critical{background:var(--danger);color:#fff;}
-.sev-medium{background:#fef3c7;color:#92400e;border:1px solid #fcd34d;}
-.imetrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px;}
-.imet{display:flex;flex-direction:column;gap:3px;}
-.imet-lbl{font-size:11px;color:var(--text-dim);}
-.imet-val{font-size:14px;font-weight:700;} .imet-val.danger{color:var(--danger);} .imet-val.warning{color:var(--warning);} .imet-val.ok{color:var(--success);}
-.ai-block{background:#fff;border:1px solid rgba(220,38,38,.15);border-radius:5px;padding:12px 14px;font-size:12px;color:var(--text-mid);line-height:1.6;margin-bottom:12px;}
-.recs{display:flex;flex-direction:column;gap:5px;}
-.rec{display:flex;align-items:flex-start;gap:8px;font-size:12px;color:var(--text-mid);}
-.rec-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:4px;}
-.rec-dot.critical{background:var(--danger);} .rec-dot.warning{background:var(--warning);}
-.rvg{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid var(--border);border-radius:6px;overflow:hidden;margin-top:12px;}
-.rvg-col{padding:12px 16px;text-align:center;} .rvg-col:not(:last-child){border-right:1px solid var(--border);}
-.rvg-lbl{font-size:10px;color:var(--text-dim);font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;}
-.rvg-val{font-family:var(--mono);font-size:20px;font-weight:600;}
-.rvg-val.rep{color:var(--text);} .rvg-val.act{color:var(--accent);} .rvg-val.diff{color:var(--danger);}
-.ok-banner{background:var(--success-dim);border:1px solid rgba(22,163,74,.2);border-radius:var(--r);padding:14px 18px;margin-bottom:18px;display:flex;align-items:center;gap:10px;font-size:13px;font-weight:600;color:var(--success);}
-.d2col{display:grid;grid-template-columns:320px 1fr;gap:16px;margin-bottom:16px;}
-.dcard{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px 18px;box-shadow:var(--sh);}
-.dcard-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--text-dim);margin-bottom:12px;display:flex;align-items:center;gap:6px;}
-.jd-site{font-size:15px;font-weight:700;margin-bottom:2px;}
-.jd-addr{font-size:12px;color:var(--text-dim);margin-bottom:14px;}
-.jd-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
-.jd-f label{font-size:10px;color:var(--text-dim);font-weight:600;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:2px;}
-.jd-f span{font-size:13px;font-weight:500;}
-.invoice{font-family:var(--mono);font-size:26px;font-weight:700;}
-#detail-map{width:100%;height:100%;min-height:260px;border-radius:6px;}
-.tv-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
-.tv-item{border:1px solid var(--border);border-radius:6px;padding:13px 14px;}
-.tv-item.bad{border-color:rgba(220,38,38,.3);background:#fff8f8;}
-.tv-lbl{font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;}
-.tv-flag{font-size:11px;color:var(--danger);font-weight:700;}
-.tv-times{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px;}
-.tvtb{background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:8px 10px;}
-.tvtb.bad{background:#fff8f8;border-color:rgba(220,38,38,.2);} .tvtb.ok{background:var(--success-dim);border-color:rgba(22,163,74,.2);}
-.tvtb-lbl{font-size:9px;color:var(--text-dim);font-weight:600;text-transform:uppercase;margin-bottom:2px;}
-.tvtb-val{font-family:var(--mono);font-size:16px;font-weight:600;}
-.tv-bar-w{height:4px;background:var(--border);border-radius:2px;overflow:hidden;margin:5px 0;}
-.tv-bar{height:100%;border-radius:2px;} .tv-bar.on{background:var(--success);} .tv-bar.off{background:var(--danger);}
-.tv-bar-lbl{font-size:10px;color:var(--text-dim);display:flex;justify-content:space-between;}
+/* ── ISSUES BANNER ── */
+.iss-banner{background:var(--warning-dim);border:1px solid var(--warning-border);border-radius:8px;padding:16px 18px;}
+.ib-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.ib-title{font-size:14px;font-weight:700;color:var(--warning);}
+.sev-pills{display:flex;gap:8px;}
+.sev-crit{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;background:var(--danger-dim);color:var(--danger);border:1px solid var(--danger-border);}
+.sev-med{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;background:var(--warning-dim);color:var(--warning);border:1px solid var(--warning-border);}
+.ib-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:12px;}
+.ib-stat{text-align:center;}
+.ib-stat-icon{font-size:18px;margin-bottom:4px;}
+.ib-stat-label{font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;}
+.ib-stat-val{font-size:13px;font-weight:700;}
+.val-bad{color:var(--danger);} .val-warn{color:var(--warning);} .val-ok{color:var(--success);}
+.ib-summary{font-size:13px;color:var(--text-mid);line-height:1.6;background:rgba(255,255,255,.6);border-radius:6px;padding:10px 12px;margin-bottom:10px;}
+.ib-actions{display:flex;flex-direction:column;gap:6px;}
+.ib-action{display:flex;align-items:flex-start;gap:7px;font-size:12px;line-height:1.5;}
+
+/* ── REPORTED vs GPS ── */
+.rgps-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:var(--border);border-radius:8px;overflow:hidden;border:1px solid var(--border);}
+.rgps-cell{background:var(--surface);padding:14px 18px;text-align:center;}
+.rgps-lbl{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--text-dim);margin-bottom:6px;}
+.rgps-val{font-family:var(--mono);font-size:22px;font-weight:700;}
+.rgps-neg{color:var(--danger);} .rgps-pos{color:var(--success);}
+
+/* ── TWO COL ── */
+.two-col{display:grid;grid-template-columns:300px 1fr;gap:18px;}
+.d-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:18px;box-shadow:var(--sh);}
+.d-card-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--text-dim);margin-bottom:14px;}
+.jd-field{margin-bottom:12px;}
+.jd-lbl{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--text-dim);margin-bottom:3px;}
+.jd-val{font-size:14px;font-weight:600;}
+.jd-val-sub{font-size:12px;color:var(--text-dim);margin-top:1px;}
+.jd-row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.jd-div{border:none;border-top:1px solid var(--border);margin:12px 0;}
+.invoice-amt{font-family:var(--mono);font-size:24px;font-weight:700;}
+
+/* ── MAP ── */
+.map-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;box-shadow:var(--sh);}
+.map-card-head{padding:12px 18px;border-bottom:1px solid var(--border);}
+.map-card-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--text-dim);}
+.map-card-sub{font-size:12px;color:var(--text-dim);margin-top:2px;}
+#detail-map{height:260px;}
+.map-legend-row{display:flex;gap:12px;flex-wrap:wrap;padding:8px 18px;border-top:1px solid var(--border);background:var(--bg);}
+.ml-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-dim);}
+.ml-dot{width:10px;height:10px;border-radius:50%;border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.2);flex-shrink:0;}
+
+/* ── TIME VERIFY ── */
+.tv-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
+.tv-block{border:1px solid var(--border);border-radius:6px;padding:12px;}
+.tv-block-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+.tv-block-title{font-size:11px;font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:.5px;}
+.tv-vals{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.tv-box{border-radius:5px;padding:8px 10px;}
+.tv-box-lbl{font-size:9px;text-transform:uppercase;letter-spacing:.5px;color:var(--text-dim);margin-bottom:3px;}
+.tv-box-num{font-family:var(--mono);font-size:18px;font-weight:700;}
+.tv-reported{background:var(--bg);}
+.tv-gps-bad{background:var(--warning-dim);} .tv-gps-bad .tv-box-num{color:var(--warning);}
+.tv-gps-ok{background:var(--success-dim);} .tv-gps-ok .tv-box-num{color:var(--success);}
+.hs-block{border:1px solid var(--border);border-radius:6px;padding:12px;}
+.hs-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+.hs-title{font-size:11px;font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:.5px;}
+.hs-nums{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;}
+.bar-wrap{height:8px;background:var(--border);border-radius:4px;overflow:hidden;margin-bottom:5px;}
+.bar-fill{height:100%;background:var(--accent);border-radius:4px;transition:width .5s;}
+.bar-lbls{display:flex;justify-content:space-between;font-size:10px;color:var(--text-dim);}
+.billing-warn{background:var(--danger-dim);border:1px solid var(--danger-border);border-radius:5px;padding:8px 10px;font-size:12px;color:var(--danger);display:flex;align-items:flex-start;gap:6px;margin-top:8px;}
+
+/* ── TIMELINE ── */
 .atl{display:flex;flex-direction:column;}
-.at-item{display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);}
-.at-item:last-child{border-bottom:none;}
-.at-dcol{display:flex;flex-direction:column;align-items:center;flex-shrink:0;width:18px;}
-.at-dot{width:18px;height:18px;border-radius:50%;border:2px solid;flex-shrink:0;z-index:1;}
-.at-dot.site{border-color:var(--accent);background:var(--accent-dim);}
-.at-dot.stop{border-color:var(--danger);background:var(--danger-dim);}
-.at-conn{width:2px;background:var(--border);flex:1;min-height:8px;}
-.at-body{flex:1;}
-.at-hdr{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:6px;}
-.at-name{font-size:13px;font-weight:700;}
-.at-addr{font-size:11px;color:var(--text-dim);}
-.at-flag-b{padding:2px 7px;background:var(--danger-dim);color:var(--danger);border:1px solid rgba(220,38,38,.2);border-radius:3px;font-size:10px;font-weight:700;}
-.at-times{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:8px 10px;}
-.at-ti label{font-size:9px;color:var(--text-dim);font-weight:600;text-transform:uppercase;display:block;margin-bottom:2px;}
-.at-ti span{font-family:var(--mono);font-size:12px;font-weight:500;}
-.at-ti span.hl{color:var(--danger);font-weight:700;}
-.gm-grid{display:flex;flex-direction:column;gap:0;}
-.gm{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);}
-.gm:last-child{border-bottom:none;}
-.gm-lbl{font-size:12px;color:var(--text-dim);}
-.gm-val{font-family:var(--mono);font-size:13px;font-weight:600;}
-.issues-list{display:flex;flex-direction:column;gap:8px;}
-.ii{border:1px solid var(--border);border-left:3px solid var(--warning);border-radius:6px;padding:11px 13px;}
-.ii.crit{border-left-color:var(--danger);}
-.ii-top{display:flex;align-items:center;gap:8px;margin-bottom:4px;}
-.ii-type{font-size:11px;font-weight:700;color:var(--text-mid);}
-.ii-sev{padding:1px 6px;border-radius:3px;font-size:9px;font-weight:700;text-transform:uppercase;}
-.ii-sev.medium{background:#fef3c7;color:#92400e;} .ii-sev.high{background:var(--danger-dim);color:var(--danger);}
-.ii-desc{font-size:12px;color:var(--text-mid);line-height:1.4;}
+.atl-item{display:grid;grid-template-columns:32px 1fr;gap:0 12px;position:relative;}
+.atl-item:not(:last-child) .atl-line{position:absolute;left:15px;top:32px;bottom:-8px;width:2px;background:var(--border);}
+.atl-dot{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;border:2px solid var(--border);background:var(--surface);position:relative;z-index:1;}
+.atl-dot-site{border-color:var(--accent);background:var(--accent-dim);}
+.atl-dot-stop{border-color:var(--danger);background:var(--danger-dim);}
+.atl-dot-yard{border-color:var(--text-dim);background:var(--bg);}
+.atl-body{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:12px;margin-bottom:10px;}
+.atl-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:3px;}
+.atl-title{font-size:13px;font-weight:700;}
+.atl-addr{font-size:11px;color:var(--text-dim);margin-bottom:8px;}
+.atl-times{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;}
+.atl-tl{font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px;}
+.atl-tv{font-size:13px;font-weight:600;font-family:var(--mono);}
+.atl-dur{font-size:12px;font-weight:700;}
+.atl-flagged{background:var(--danger-dim);color:var(--danger);font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;border:1px solid var(--danger-border);}
 
-/* MAP */
-.map-wrap{position:relative;height:260px;}
-.map-legend{position:absolute;bottom:10px;right:10px;z-index:999;background:rgba(255,255,255,.94);border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-size:11px;pointer-events:none;box-shadow:var(--sh);}
-.ml-t{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--text-dim);margin-bottom:5px;}
-.ml-item{display:flex;align-items:center;gap:6px;margin-bottom:3px;color:var(--text-mid);font-size:11px;}
-.ml-item:last-child{margin-bottom:0;}
-.ml-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;border:2px solid #fff;}
-.ml-line{width:18px;height:3px;border-radius:1px;flex-shrink:0;}
-.ml-dash{width:18px;height:3px;background:repeating-linear-gradient(90deg,#d97706 0,#d97706 5px,transparent 5px,transparent 9px);}
-.yard-marker{width:26px;height:26px;border-radius:50%;background:var(--success);border:3px solid #fff;display:flex;align-items:center;justify-content:center;font-size:12px;box-shadow:0 2px 8px rgba(22,163,74,.4);}
-.site-marker{width:26px;height:26px;border-radius:50%;background:var(--accent);border:3px solid #fff;display:flex;align-items:center;justify-content:center;font-size:12px;box-shadow:0 2px 8px rgba(12,111,227,.4);}
-.stop-marker{width:22px;height:22px;border-radius:50%;background:var(--danger);border:3px solid #fff;display:flex;align-items:center;justify-content:center;font-size:10px;box-shadow:0 2px 6px rgba(220,38,38,.4);}
+/* ── GPS METRICS ── */
+.gm-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
+.gm-lbl{font-size:11px;color:var(--text-dim);margin-bottom:3px;}
+.gm-val{font-size:15px;font-weight:700;font-family:var(--mono);}
 
-/* MODAL */
-.modal-overlay{display:none;position:fixed;inset:0;z-index:500;background:rgba(15,23,42,.5);backdrop-filter:blur(4px);align-items:center;justify-content:center;}
-.modal-overlay.open{display:flex;}
-.modal{background:var(--surface);border-radius:12px;width:520px;max-height:88vh;overflow-y:auto;box-shadow:var(--sh-lg);border:1px solid var(--border);}
-.mhdr{padding:18px 22px 0;display:flex;align-items:center;justify-content:space-between;}
-.mhdr-title{font-size:16px;font-weight:700;}
-.mclose{background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-dim);padding:2px 6px;border-radius:4px;}
-.mclose:hover{background:var(--surface2);}
-.msteps{display:flex;align-items:center;padding:12px 22px 0;}
+/* ── ISSUES LIST ── */
+.iss-list{display:flex;flex-direction:column;gap:8px;}
+.iss-item{border-radius:6px;padding:12px 14px;display:flex;gap:10px;align-items:flex-start;}
+.iss-crit{background:var(--danger-dim);border:1px solid var(--danger-border);}
+.iss-med{background:var(--warning-dim);border:1px solid var(--warning-border);}
+.iss-icon{font-size:16px;flex-shrink:0;margin-top:1px;}
+.iss-type{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;}
+.iss-crit .iss-type{color:var(--danger);} .iss-med .iss-type{color:var(--warning);}
+.iss-title{font-size:13px;font-weight:600;margin-bottom:2px;}
+.iss-desc{font-size:12px;color:var(--text-mid);line-height:1.5;}
+.iss-sev{font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;margin-left:auto;flex-shrink:0;align-self:flex-start;}
+.iss-crit .iss-sev{background:var(--danger);color:#fff;} .iss-med .iss-sev{background:var(--warning);color:#fff;}
+
+/* ── MODALS ── */
+.overlay{display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.45);backdrop-filter:blur(3px);align-items:center;justify-content:center;}
+.overlay.open{display:flex;}
+.modal{background:var(--surface);border-radius:12px;width:500px;max-height:90vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,.18);border:1px solid var(--border);}
+.modal-hdr{padding:20px 22px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.modal-title{font-size:16px;font-weight:700;display:flex;align-items:center;gap:8px;}
+.modal-close{background:none;border:none;font-size:18px;cursor:pointer;color:var(--text-dim);padding:4px;border-radius:4px;line-height:1;}
+.modal-close:hover{color:var(--text);background:var(--bg);}
+.modal-body{padding:20px 22px;}
+.modal-footer{padding:14px 22px 20px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;align-items:center;}
+.footer-note{font-size:11px;color:var(--text-dim);margin-right:auto;}
+
+/* ── FORM FIELDS ── */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.form-field{display:flex;flex-direction:column;gap:5px;}
+.form-field.full{grid-column:1/-1;}
+.form-label{font-size:12px;font-weight:600;color:var(--text-mid);}
+.form-label span{font-weight:400;color:var(--text-dim);}
+.form-input{padding:9px 12px;border:1px solid var(--border);border-radius:6px;font-family:'Inter',sans-serif;font-size:13px;color:var(--text);background:var(--surface);outline:none;width:100%;}
+.form-input:focus{border-color:var(--accent);}
+.form-input.error{border-color:var(--danger);background:var(--danger-dim);}
+
+/* ── PROCESSING STATUS ── */
+.proc-status{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:14px;display:none;margin-top:12px;}
+.proc-step{display:flex;align-items:center;gap:10px;padding:7px 0;font-size:13px;}
+.proc-step:not(:last-child){border-bottom:1px solid var(--border);}
+.proc-icon{font-size:16px;width:24px;text-align:center;flex-shrink:0;}
+.proc-label{flex:1;color:var(--text-mid);}
+.proc-st{font-size:11px;font-weight:700;}
+.proc-st.pending{color:var(--text-dim);} .proc-st.running{color:var(--accent);}
+.proc-st.done{color:var(--success);} .proc-st.error{color:var(--danger);}
+
+/* ── UPLOAD MODAL ── */
+.upload-zone{border:2px dashed var(--border);border-radius:10px;padding:32px 20px;text-align:center;cursor:pointer;background:var(--bg);position:relative;transition:all .15s;}
+.upload-zone:hover{border-color:var(--accent);background:var(--accent-dim);}
+.upload-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+.msteps{display:flex;align-items:center;padding:14px 22px 0;}
 .mstep{display:flex;align-items:center;gap:5px;font-size:11px;font-weight:600;color:var(--text-dim);}
 .mstep.active{color:var(--accent);} .mstep.done{color:var(--success);}
-.mstep-n{width:20px;height:20px;border-radius:50%;background:var(--surface2);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;}
+.mstep-n{width:20px;height:20px;border-radius:50%;background:var(--bg);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;}
 .mstep.active .mstep-n{background:var(--accent-dim);border-color:var(--accent);color:var(--accent);}
 .mstep.done .mstep-n{background:var(--success-dim);border-color:var(--success);color:var(--success);}
 .mstep-div{flex:1;height:1px;background:var(--border);margin:0 6px;}
-.mbody{padding:16px 22px 18px;}
-.upload-zone{border:2px dashed var(--border2);border-radius:10px;padding:26px 20px;text-align:center;cursor:pointer;transition:all .15s;background:var(--surface2);position:relative;}
-.upload-zone:hover{border-color:var(--accent);background:var(--accent-dim);}
-.upload-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
-.upload-icon{font-size:30px;margin-bottom:7px;}
-.upload-title{font-size:14px;font-weight:700;margin-bottom:3px;}
-.upload-sub{font-size:12px;color:var(--text-dim);}
-.fq{margin-top:10px;display:flex;flex-direction:column;gap:4px;max-height:130px;overflow-y:auto;}
-.fqi{display:flex;align-items:center;gap:7px;padding:5px 9px;background:var(--surface2);border:1px solid var(--border);border-radius:5px;font-size:12px;}
-.fqi span:last-child{margin-left:auto;color:var(--text-dim);font-size:10px;}
-.bpo-label{display:flex;justify-content:space-between;font-size:11px;color:var(--text-dim);margin-bottom:4px;}
-.bpo-bar-wrap{height:5px;background:var(--border);border-radius:3px;overflow:hidden;}
+.bpo-lbl{display:flex;justify-content:space-between;font-size:11px;color:var(--text-dim);margin-bottom:5px;}
+.bpo-bar-wrap{height:6px;background:var(--border);border-radius:3px;overflow:hidden;}
 .bpo-bar{height:100%;background:var(--accent);border-radius:3px;width:0%;transition:width .4s;}
-.brows{border:1px solid var(--border);border-radius:6px;overflow:hidden;margin-top:10px;}
-.brow-hdr{display:grid;grid-template-columns:22px 1fr 110px 80px;padding:6px 10px;background:var(--surface2);border-bottom:1px solid var(--border);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text-dim);}
-.brow{display:grid;grid-template-columns:22px 1fr 110px 80px;padding:7px 10px;font-size:12px;border-bottom:1px solid var(--border);align-items:center;transition:background .2s;}
-.brow:last-child{border-bottom:none;}
-.brow.processing{background:var(--accent-dim);} .brow.done-ok{background:var(--success-dim);} .brow.done-flag{background:#fffbeb;} .brow.done-err{background:var(--danger-dim);}
-.bri{font-size:13px;text-align:center;}
-.brn{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:6px;}
-.brf{font-size:11px;color:var(--text-mid);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.brs{font-size:11px;font-weight:700;text-align:right;}
-.brs.ok{color:var(--success);} .brs.flag{color:var(--warning);} .brs.err{color:var(--danger);} .brs.proc{color:var(--accent);}
+.b-tbl{border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-top:12px;}
+.b-tbl-hdr{display:grid;grid-template-columns:24px 1fr 100px 80px;background:var(--bg);border-bottom:1px solid var(--border);padding:6px 10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--text-dim);}
+.b-row{display:grid;grid-template-columns:24px 1fr 100px 80px;padding:8px 10px;font-size:12px;border-bottom:1px solid var(--border);align-items:center;}
+.b-row:last-child{border-bottom:none;}
+.b-row.processing{background:var(--accent-dim);} .b-row.done-ok{background:var(--success-dim);}
+.b-row.done-flag{background:var(--warning-dim);} .b-row.done-err{background:var(--danger-dim);}
+.b-name{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:8px;}
+.b-fld{font-size:11px;color:var(--text-mid);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.b-st{font-size:11px;font-weight:700;text-align:right;}
+.b-ok{color:var(--success);} .b-flag{color:var(--warning);} .b-err{color:var(--danger);} .b-proc{color:var(--accent);}
 .done-pills{display:flex;gap:10px;margin-bottom:12px;}
-.dp{flex:1;padding:10px;border-radius:7px;text-align:center;border:1px solid var(--border);}
+.dp{flex:1;padding:10px;border-radius:8px;text-align:center;border:1px solid var(--border);}
 .dp-num{font-family:var(--mono);font-size:22px;font-weight:700;line-height:1;}
-.dp-lbl{font-size:10px;color:var(--text-dim);margin-top:2px;text-transform:uppercase;letter-spacing:.4px;}
-.dp-saved{background:var(--success-dim);border-color:rgba(22,163,74,.2);} .dp-saved .dp-num{color:var(--success);}
-.dp-rev{background:#fffbeb;border-color:rgba(217,119,6,.2);} .dp-rev .dp-num{color:var(--warning);}
-.dp-err{background:var(--danger-dim);border-color:rgba(220,38,38,.2);} .dp-err .dp-num{color:var(--danger);}
-.mfoot{padding:12px 22px 16px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:space-between;align-items:center;}
-.foot-note{font-size:11px;color:var(--text-dim);}
-.foot-btns{display:flex;gap:8px;}
-.btn-cancel{padding:7px 14px;border-radius:6px;border:1px solid var(--border2);background:transparent;color:var(--text-mid);font-family:var(--sans);font-size:12px;font-weight:600;cursor:pointer;}
-.btn-cancel:hover{border-color:var(--text-mid);}
-.btn-proc{padding:7px 16px;border-radius:6px;border:none;background:var(--accent);color:#fff;font-family:var(--sans);font-size:12px;font-weight:700;cursor:pointer;}
-.btn-proc:hover{background:var(--accent-hover);} .btn-proc:disabled{opacity:.4;cursor:not-allowed;}
+.dp-lbl{font-size:10px;color:var(--text-dim);margin-top:3px;text-transform:uppercase;letter-spacing:.5px;}
+.dp-saved{background:var(--success-dim);border-color:var(--success-border);} .dp-saved .dp-num{color:var(--success);}
+.dp-review{background:var(--warning-dim);border-color:var(--warning-border);} .dp-review .dp-num{color:var(--warning);}
+.dp-err{background:var(--danger-dim);border-color:var(--danger-border);} .dp-err .dp-num{color:var(--danger);}
 
-::-webkit-scrollbar{width:4px;height:4px;} ::-webkit-scrollbar-track{background:transparent;} ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
-
-/* SETTINGS MODAL */
-.settings-overlay{display:none;position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.45);backdrop-filter:blur(3px);align-items:center;justify-content:center;}
-.settings-overlay.open{display:flex;}
-.settings-modal{background:var(--surface);border-radius:12px;width:480px;box-shadow:0 24px 64px rgba(0,0,0,.18);border:1px solid var(--border2);}
-.sm-header{padding:20px 22px 0;display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
-.sm-title{font-size:16px;font-weight:700;display:flex;align-items:center;gap:8px;}
-.sm-close{background:none;border:none;font-size:18px;cursor:pointer;color:var(--text-dim);padding:4px;border-radius:4px;}
-.sm-close:hover{color:var(--text);background:var(--bg);}
-.sm-body{padding:0 22px 20px;display:flex;flex-direction:column;gap:20px;}
-.sm-section{display:flex;flex-direction:column;gap:8px;}
-.sm-section-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--text-dim);display:flex;align-items:center;gap:6px;}
-.sm-section-desc{font-size:12px;color:var(--text-dim);line-height:1.5;margin-bottom:2px;}
-.sm-field{display:flex;flex-direction:column;gap:5px;}
-.sm-label{font-size:12px;font-weight:600;color:var(--text-mid);display:flex;align-items:center;justify-content:space-between;}
-.sm-input-wrap{position:relative;display:flex;align-items:center;}
-.sm-input{width:100%;padding:9px 38px 9px 12px;border:1px solid var(--border2);border-radius:6px;font-family:var(--mono);font-size:12px;color:var(--text);background:var(--surface);outline:none;letter-spacing:.3px;}
-.sm-input:focus{border-color:var(--accent);}
-.sm-input.has-key{border-color:var(--success);background:var(--success-dim);}
-.sm-input.has-key-warn{border-color:var(--warning);background:var(--warning-dim);}
-.sm-toggle{position:absolute;right:10px;background:none;border:none;cursor:pointer;font-size:14px;color:var(--text-dim);padding:2px;}
-.sm-status{font-size:11px;display:flex;align-items:center;gap:5px;margin-top:2px;}
+/* ── SETTINGS ── */
+.sm-section{display:flex;flex-direction:column;gap:8px;margin-bottom:16px;}
+.sm-section-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--text-dim);}
+.sm-section-desc{font-size:12px;color:var(--text-dim);line-height:1.5;}
+.sm-status{font-size:11px;display:flex;align-items:center;gap:5px;margin-top:3px;}
 .sm-status.ok{color:var(--success);} .sm-status.warn{color:var(--warning);} .sm-status.empty{color:var(--text-dim);}
-.sm-divider{border:none;border-top:1px solid var(--border);margin:0;}
-.sm-footer{padding:14px 22px 20px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:space-between;align-items:center;}
-.sm-footer-note{font-size:11px;color:var(--text-dim);line-height:1.5;}
-.sm-env-toggle{display:flex;gap:6px;}
-.sm-env-btn{padding:5px 12px;border-radius:5px;border:1px solid var(--border2);background:transparent;font-family:var(--sans);font-size:11px;font-weight:600;cursor:pointer;color:var(--text-dim);transition:all .15s;}
+.sm-env-toggle{display:flex;gap:6px;margin-top:4px;}
+.sm-env-btn{padding:5px 12px;border-radius:5px;border:1px solid var(--border);background:transparent;font-family:'Inter',sans-serif;font-size:11px;font-weight:600;cursor:pointer;color:var(--text-dim);}
 .sm-env-btn.active{background:var(--accent);border-color:var(--accent);color:#fff;}
-.topbar-key-indicator{display:flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:4px 10px;border-radius:20px;border:1px solid var(--border2);}
-.tki-ok{color:var(--success);border-color:var(--success-mid);background:var(--success-dim);}
-.tki-warn{color:var(--warning);border-color:var(--warning-mid);background:var(--warning-dim);}
+.sm-footer-note{font-size:11px;color:var(--text-dim);line-height:1.5;margin-right:auto;}
 
-/* MANUAL VERIFY MODAL */
-.mv-modal{background:var(--surface);border-radius:12px;width:500px;max-height:90vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,.18);border:1px solid var(--border2);}
-.mv-header{padding:20px 22px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
-.mv-title{font-size:16px;font-weight:700;display:flex;align-items:center;gap:8px;}
-.mv-body{padding:20px 22px;}
-.mv-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;}
-.mv-field{display:flex;flex-direction:column;gap:5px;}
-.mv-field.full{grid-column:1/-1;}
-.mv-label{font-size:12px;font-weight:600;color:var(--text-mid);}
-.mv-input{padding:9px 12px;border:1px solid var(--border2);border-radius:6px;font-family:var(--sans);font-size:13px;color:var(--text);background:var(--surface);outline:none;width:100%;}
-.mv-input:focus{border-color:var(--accent);}
-.mv-input.error{border-color:var(--danger);background:var(--danger-dim);}
-.mv-status{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:16px;display:none;}
-.mv-status-step{display:flex;align-items:center;gap:10px;padding:6px 0;font-size:13px;}
-.mv-status-step:not(:last-child){border-bottom:1px solid var(--border);}
-.mv-step-icon{font-size:16px;width:24px;text-align:center;flex-shrink:0;}
-.mv-step-label{flex:1;color:var(--text-mid);}
-.mv-step-status{font-size:11px;font-weight:700;}
-.mv-step-status.pending{color:var(--text-dim);}
-.mv-step-status.running{color:var(--accent);}
-.mv-step-status.done{color:var(--success);}
-.mv-step-status.error{color:var(--danger);}
-.mv-no-proxy{background:var(--warning-dim);border:1px solid var(--warning-border,#fde68a);border-radius:8px;padding:12px 14px;font-size:12px;color:var(--warning);display:flex;align-items:flex-start;gap:8px;margin-bottom:16px;}
-.mv-footer{padding:14px 22px 20px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;}
+::-webkit-scrollbar{width:5px;} ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
 </style>
 </head>
 <body>
 
+<!-- TOPBAR -->
 <div class="topbar">
-  <div class="tb-logo">⛽</div>
-  <div class="tb-brand">
+  <div class="tb-icon">📋</div>
+  <div>
     <div class="tb-title">Service Verification</div>
     <div class="tb-sub">GPS-Powered Driver Ticket Validation</div>
   </div>
   <div class="tb-right">
-    <button class="btn btn-outline" onclick="openSettings()" id="settingsBtn">⚙️ API Keys</button>
-    <button class="btn btn-outline" onclick="exportSelected()">⬇ Export GPS</button>
-    <button class="btn btn-outline" onclick="openManualVerify()">🔍 Manual Verify</button>
-    <button class="btn btn-primary" onclick="openUpload()">📤 Upload Tickets</button>
+    <button class="btn" onclick="openSettings()" id="settingsBtn">⚙️ Connect API</button>
+    <button class="btn" onclick="bulkExportGPS()" id="btnExport" disabled>⬇ Export GPS</button>
+    <button class="btn" onclick="openManualVerify()">🔍 Manual Verify</button>
+    <button class="btn btn-primary" onclick="openUpload()">⬆ Upload Tickets</button>
   </div>
 </div>
 
-<!-- LIST VIEW -->
-<div id="view-list">
+<!-- LIST PAGE -->
+<div id="page-list">
 <div class="page">
   <div class="stats-row">
-    <div class="stat-card sc-total"><div class="sc-top"><span class="sc-label">Total Tickets</span><span>📋</span></div><div class="sc-num" id="statTotal">0</div><div class="sc-sub">All uploaded tickets</div></div>
-    <div class="stat-card sc-verified"><div class="sc-top"><span class="sc-label">Verified</span><span>✅</span></div><div class="sc-num" id="statVerified">0</div><div class="sc-sub">Ready for invoicing</div></div>
-    <div class="stat-card sc-flagged"><div class="sc-top"><span class="sc-label">Flagged</span><span>⚠️</span></div><div class="sc-num" id="statFlagged">0</div><div class="sc-sub">Needs review</div></div>
-    <div class="stat-card sc-processing"><div class="sc-top"><span class="sc-label">Processing</span><span>🔄</span></div><div class="sc-num" id="statProcessing">0</div><div class="sc-sub">In progress</div></div>
+    <div class="stat-card sc-total"><div class="sc-top"><span class="sc-label">Total Tickets</span><span>📄</span></div><div class="sc-num" id="st-total">0</div><div class="sc-sub">All tickets</div></div>
+    <div class="stat-card sc-verified"><div class="sc-top"><span class="sc-label">Verified</span><span>✅</span></div><div class="sc-num" id="st-verified">0</div><div class="sc-sub">Ready for invoicing</div></div>
+    <div class="stat-card sc-flagged"><div class="sc-top"><span class="sc-label">Flagged</span><span>⚠️</span></div><div class="sc-num" id="st-flagged">0</div><div class="sc-sub">Needs review</div></div>
+    <div class="stat-card sc-processing"><div class="sc-top"><span class="sc-label">Processing</span><span>🔄</span></div><div class="sc-num" id="st-processing">0</div><div class="sc-sub">In progress</div></div>
   </div>
   <div class="queue-hdr">
-    <div class="queue-hdr-left"><h2>Verification Queue</h2><p>Review and manage driver ticket verification</p></div>
-    <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-mid);cursor:pointer;">
-      <input type="checkbox" id="selAllCb" onchange="toggleSelectAll()" style="accent-color:var(--accent)"> Select all
-    </label>
+    <div><div class="queue-title">Verification Queue</div><div class="queue-sub">Review and manage driver ticket verification</div></div>
+    <button class="btn btn-primary" onclick="openUpload()">⬆ Upload Tickets</button>
   </div>
-  <div class="bulk-bar" id="bulkBar" style="display:none">
-    <span id="bulkBarLabel">0 tickets selected</span>
-    <button class="btn btn-primary" onclick="exportSelected()">⬇ Download GPS Data</button>
+  <div class="bulk-bar">
+    <label class="bulk-check"><input type="checkbox" id="selAll" onchange="toggleSelAll(this)"><span id="selAllLbl">Select all</span></label>
+  </div>
+  <div class="filter-bar">
+    <div class="search-wrap"><span class="search-icon">🔍</span><input class="search-el" id="searchEl" placeholder="Search ticket #, driver, asset…" oninput="renderList()"></div>
+    <div class="ftabs">
+      <button class="ftab active" onclick="setFilter('all',this)">All</button>
+      <button class="ftab" onclick="setFilter('flagged',this)">⚠️ Flagged</button>
+      <button class="ftab" onclick="setFilter('verified',this)">✅ Verified</button>
+      <button class="ftab" onclick="setFilter('processing',this)">🔄 Processing</button>
+    </div>
   </div>
   <div class="ticket-list" id="ticketList"></div>
 </div>
 </div>
 
-<!-- DETAIL VIEW -->
-<div id="view-detail">
-  <div class="detail-page" id="detailContainer"></div>
+<!-- DETAIL PAGE -->
+<div id="page-detail">
+  <div class="detail-topbar">
+    <button class="btn" onclick="showList()">← Back</button>
+    <span class="d-id" id="d-id">—</span>
+    <span class="issues-pill" id="d-pill" style="display:none"></span>
+    <div class="d-actions">
+      <button class="btn" onclick="exportDetailGPS()">⬇ Export GPS</button>
+      <button class="btn btn-success" onclick="verifyCurrentJob()">✅ Verify Job</button>
+    </div>
+  </div>
+  <div class="detail-content">
+    <div id="d-banner" style="display:none"></div>
+    <div class="rgps-row">
+      <div class="rgps-cell"><div class="rgps-lbl">📋 Reported Hours</div><div class="rgps-val" id="d-rep">—</div></div>
+      <div class="rgps-cell"><div class="rgps-lbl">📡 GPS Actual</div><div class="rgps-val" id="d-gps">—</div></div>
+      <div class="rgps-cell"><div class="rgps-lbl">△ Difference</div><div class="rgps-val" id="d-diff">—</div></div>
+    </div>
+    <div class="two-col">
+      <div class="d-card">
+        <div class="d-card-title">📋 Job Details</div>
+        <div class="jd-field"><div class="jd-lbl">📍 Job Site</div><div class="jd-val" id="d-site">—</div></div>
+        <div class="jd-row2">
+          <div class="jd-field"><div class="jd-lbl">👤 Driver</div><div class="jd-val" id="d-driver">—</div><div class="jd-val-sub" id="d-esn">—</div></div>
+          <div class="jd-field"><div class="jd-lbl">🚛 Asset</div><div class="jd-val" id="d-assetid">—</div><div class="jd-val-sub" id="d-asset">—</div></div>
+        </div>
+        <hr class="jd-div">
+        <div class="jd-field"><div class="jd-lbl">💰 Invoice Amount</div><div class="invoice-amt" id="d-invoice">—</div></div>
+      </div>
+      <div class="map-card">
+        <div class="map-card-head"><div class="map-card-title">🗺 Route Visualization</div><div class="map-card-sub">GPS tracking from start to end of job</div></div>
+        <div id="detail-map" style="height:240px;"></div>
+        <div class="map-legend-row">
+          <div class="ml-item"><div class="ml-dot" style="background:#0C6FE3;"></div>🏠 Home Yard</div>
+          <div class="ml-item"><div class="ml-dot" style="background:#16a34a;"></div>📍 Job Site</div>
+          <div class="ml-item"><div class="ml-dot" style="background:#dc2626;"></div>⚠️ Stop</div>
+        </div>
+      </div>
+    </div>
+    <div class="d-card">
+      <div class="d-card-title">🕐 Time Verification Analysis</div>
+      <div class="tv-grid">
+        <div class="tv-block">
+          <div class="tv-block-head"><span class="tv-block-title">Arrival Time</span></div>
+          <div class="tv-vals">
+            <div class="tv-box tv-reported"><div class="tv-box-lbl">Reported</div><div class="tv-box-num" id="d-arr-rep">—</div></div>
+            <div class="tv-box tv-gps-ok" id="d-arr-gps-box"><div class="tv-box-lbl">GPS Actual</div><div class="tv-box-num" id="d-arr-gps">—</div></div>
+          </div>
+        </div>
+        <div class="tv-block">
+          <div class="tv-block-head"><span class="tv-block-title">Departure Time</span></div>
+          <div class="tv-vals">
+            <div class="tv-box tv-reported"><div class="tv-box-lbl">Reported</div><div class="tv-box-num" id="d-dep-rep">—</div></div>
+            <div class="tv-box tv-gps-ok" id="d-dep-gps-box"><div class="tv-box-lbl">GPS Actual</div><div class="tv-box-num" id="d-dep-gps">—</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="hs-block">
+        <div class="hs-head"><span class="hs-title">Total Hours On Site</span><span id="d-hrs-badge" style="font-size:11px;font-weight:700;"></span></div>
+        <div class="hs-nums">
+          <div class="tv-box tv-reported" style="border-radius:5px;"><div class="tv-box-lbl">Reported</div><div class="tv-box-num" id="d-hrs-rep">—</div></div>
+          <div class="tv-box tv-gps-ok" id="d-hrs-gps-box" style="border-radius:5px;"><div class="tv-box-lbl">GPS Actual</div><div class="tv-box-num" id="d-hrs-gps">—</div></div>
+        </div>
+        <div class="bar-wrap"><div class="bar-fill" id="d-bar" style="width:100%"></div></div>
+        <div class="bar-lbls"><span>Reported</span><span>GPS Actual</span></div>
+        <div class="billing-warn" id="d-bill-warn" style="display:none"><span>⚠️</span><span id="d-bill-warn-txt"></span></div>
+      </div>
+    </div>
+    <div class="d-card">
+      <div class="d-card-title">📍 Activity Timeline</div>
+      <div class="atl" id="d-timeline"></div>
+    </div>
+    <div class="d-card">
+      <div class="d-card-title">📡 GPS Metrics</div>
+      <div class="gm-grid" id="d-metrics"></div>
+    </div>
+    <div class="d-card" id="d-iss-card" style="display:none">
+      <div class="d-card-title">⚠️ Issues Detected (<span id="d-iss-count">0</span>)</div>
+      <div class="iss-list" id="d-iss-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- MANUAL VERIFY MODAL -->
+<div class="overlay" id="mvModal">
+  <div class="modal">
+    <div class="modal-hdr"><div class="modal-title">🔍 Manual Job Verification</div><button class="modal-close" onclick="closeMV()">✕</button></div>
+    <div class="modal-body">
+      <div id="mv-no-proxy" style="display:none;background:var(--warning-dim);border:1px solid var(--warning-border);border-radius:8px;padding:12px 14px;font-size:12px;color:var(--warning);margin-bottom:14px;">
+        ⚠️ No proxy URL configured. Click <strong>⚙️ Connect API</strong> in the toolbar first.
+      </div>
+      <div class="form-grid" id="mv-form">
+        <div class="form-field full"><div class="form-label">ESN or Asset ID</div><input class="form-input" id="mv-esn" placeholder="e.g. 4674671185 or UNIT-14" type="text"></div>
+        <div class="form-field full"><div class="form-label">Driver Name <span>(optional)</span></div><input class="form-input" id="mv-driver" placeholder="e.g. Carlos Reyes" type="text"></div>
+        <div class="form-field full"><div class="form-label">Date</div><input class="form-input" id="mv-date" type="date"></div>
+        <div class="form-field"><div class="form-label">Start Time (CDT)</div><input class="form-input" id="mv-start" type="time" value="07:00"></div>
+        <div class="form-field"><div class="form-label">End Time (CDT)</div><input class="form-input" id="mv-end" type="time" value="17:00"></div>
+        <div class="form-field"><div class="form-label">Reported Hours <span>(from ticket)</span></div><input class="form-input" id="mv-hrs" placeholder="e.g. 8" type="number" step="0.25" min="0" max="24"></div>
+        <div class="form-field"><div class="form-label">Invoice Amount <span>(optional)</span></div><input class="form-input" id="mv-invoice" placeholder="e.g. 1400" type="number" min="0"></div>
+      </div>
+      <div class="proc-status" id="mv-status">
+        <div class="proc-step"><div class="proc-icon" id="mv-i1">⏳</div><div class="proc-label">Looking up Asset ID → ESN</div><div class="proc-st pending" id="mv-s1">Waiting</div></div>
+        <div class="proc-step"><div class="proc-icon" id="mv-i2">⏳</div><div class="proc-label">Pulling GPS readings from Geoforce</div><div class="proc-st pending" id="mv-s2">Waiting</div></div>
+        <div class="proc-step"><div class="proc-icon" id="mv-i3">⏳</div><div class="proc-label">Analysing route and time on site</div><div class="proc-st pending" id="mv-s3">Waiting</div></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" id="mv-cancel" onclick="closeMV()">Cancel</button>
+      <button class="btn btn-primary" id="mv-run" onclick="runMV()">🔍 Verify Job</button>
+    </div>
+  </div>
 </div>
 
 <!-- UPLOAD MODAL -->
-<div class="modal-overlay" id="uploadModal">
-  <div class="modal">
-    <div class="mhdr"><div class="mhdr-title">📤 Upload Tickets</div><button class="mclose" onclick="closeUpload()">✕</button></div>
+<div class="overlay" id="uploadModal">
+  <div class="modal" style="width:520px;">
+    <div class="modal-hdr"><div class="modal-title">⬆ Upload Tickets</div><button class="modal-close" onclick="closeUpload()">✕</button></div>
     <div class="msteps">
-      <div class="mstep" id="step-ind-1"><div class="mstep-n">1</div><span>Select Files</span></div>
+      <div class="mstep" id="ms1"><div class="mstep-n">1</div><span>Select Files</span></div>
       <div class="mstep-div"></div>
-      <div class="mstep" id="step-ind-2"><div class="mstep-n">2</div><span>Processing</span></div>
+      <div class="mstep" id="ms2"><div class="mstep-n">2</div><span>Processing</span></div>
       <div class="mstep-div"></div>
-      <div class="mstep" id="step-ind-3"><div class="mstep-n">3</div><span>Complete</span></div>
+      <div class="mstep" id="ms3"><div class="mstep-n">3</div><span>Results</span></div>
     </div>
-    <div class="mbody">
-      <div id="modal-step-1">
+    <div class="modal-body">
+      <div id="up-s1">
         <div class="upload-zone">
-          <input type="file" id="ticketFileInput" accept="image/*" multiple onchange="onFilesSelected(event)">
-          <div class="upload-icon">📂</div>
-          <div class="upload-title">Upload Job Ticket Images</div>
-          <div class="upload-sub">Select one or multiple photos · JPG or PNG · Printed tickets work best</div>
+          <input type="file" id="upFiles" accept="image/*" multiple onchange="onUpFiles(event)">
+          <div style="font-size:36px;margin-bottom:10px;">📂</div>
+          <div style="font-size:14px;font-weight:700;margin-bottom:4px;">Upload Job Ticket Images</div>
+          <div style="font-size:12px;color:var(--text-dim);">Select one or multiple ticket photos · JPG or PNG</div>
         </div>
-        <div id="fqWrap" style="display:none">
-          <div style="font-size:11px;font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:.5px;margin:10px 0 6px;"><span id="fqCount">0</span> tickets selected</div>
-          <div class="fq" id="fqList"></div>
+        <div id="up-file-list" style="display:none;margin-top:12px;"></div>
+      </div>
+      <div id="up-s2" style="display:none">
+        <div class="bpo-lbl"><span id="up-lbl">Processing…</span><span id="up-cnt">0/0</span></div>
+        <div class="bpo-bar-wrap"><div class="bpo-bar" id="up-bar"></div></div>
+        <div class="b-tbl" style="margin-top:12px;">
+          <div class="b-tbl-hdr"><div></div><div>File</div><div>Asset/Driver</div><div style="text-align:right">Status</div></div>
+          <div id="up-rows"></div>
         </div>
       </div>
-      <div id="modal-step-2" style="display:none">
-        <div style="margin-bottom:10px;">
-          <div class="bpo-label"><span id="bpoLabel">Processing…</span><span id="bpoCount">0/0</span></div>
-          <div class="bpo-bar-wrap"><div class="bpo-bar" id="bpoBar"></div></div>
-        </div>
-        <div class="brows">
-          <div class="brow-hdr"><div></div><div>Ticket</div><div>Asset / Driver</div><div style="text-align:right">Status</div></div>
-          <div id="bulkQueueRows"></div>
-        </div>
-      </div>
-      <div id="modal-step-3" style="display:none">
+      <div id="up-s3" style="display:none">
         <div class="done-pills">
-          <div class="dp dp-saved"><div class="dp-num" id="doneOk">0</div><div class="dp-lbl">✅ Saved</div></div>
-          <div class="dp dp-rev"><div class="dp-num" id="doneRev">0</div><div class="dp-lbl">⚠️ Review</div></div>
-          <div class="dp dp-err"><div class="dp-num" id="doneErr">0</div><div class="dp-lbl">❌ Failed</div></div>
+          <div class="dp dp-saved"><div class="dp-num" id="up-ok">0</div><div class="dp-lbl">✅ Saved</div></div>
+          <div class="dp dp-review"><div class="dp-num" id="up-rev">0</div><div class="dp-lbl">⚠️ Flagged</div></div>
+          <div class="dp dp-err"><div class="dp-num" id="up-err">0</div><div class="dp-lbl">❌ Failed</div></div>
         </div>
-        <div class="brows">
-          <div class="brow-hdr"><div></div><div>Ticket</div><div>Asset / Driver</div><div style="text-align:right">Result</div></div>
-          <div id="bulkDoneRows"></div>
+        <div class="b-tbl">
+          <div class="b-tbl-hdr"><div></div><div>File</div><div>Asset/Driver</div><div style="text-align:right">Result</div></div>
+          <div id="up-done-rows"></div>
         </div>
-        <p style="margin-top:8px;font-size:11px;color:var(--text-dim);">⚠️ <strong>Needs Review</strong> jobs are saved but flagged — missing fields were not detected by OCR.</p>
+        <div style="margin-top:10px;font-size:11px;color:var(--text-dim);">⚠️ Flagged jobs are saved but need manual review — complete any missing fields.</div>
       </div>
     </div>
-    <div class="mfoot">
-      <div class="foot-note" id="footerNote">Select one or more ticket images to begin</div>
-      <div class="foot-btns">
-        <button class="btn-cancel" id="modalCancelBtn" onclick="closeUpload()">Cancel</button>
-        <button class="btn-proc" id="modalProcessBtn" onclick="modalNext()" disabled>📤 Process Tickets</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<script>
-// ─── DATA ──────────────────────────────────────────────────────────────────────
-const HOME_YARD={name:'Home Yard — Midland, TX',coords:[31.9973,-102.0779]};
-const MOCK_ASSET_DB={'UNIT-14':{esn:'204206514',vehicle:'Unit 14 — Ford F-450'},'UNIT-22':{esn:'204206516',vehicle:'Unit 22 — Ford F-350'},'UNIT-07':{esn:'204206515',vehicle:'Unit 07 — Chevy Silverado 3500'},'UNIT-03':{esn:'204206510',vehicle:'Unit 03 — Ford F-250'},'UNIT-09':{esn:'204206511',vehicle:'Unit 09 — Ram 3500'},'UNIT-18':{esn:'204206512',vehicle:'Unit 18 — Ford F-450'},'UNIT-05':{esn:'204206513',vehicle:'Unit 05 — Chevy Silverado 2500'},'UNIT-11':{esn:'204206517',vehicle:'Unit 11 — Ford F-350'},'UNIT-19':{esn:'204206518',vehicle:'Unit 19 — Ram 2500'}};
-
-const TICKETS=[
-  {id:'TK-2026-0894',assetId:'UNIT-14',driver:'Carlos Reyes',esn:'204206514',asset:'Unit 14 — Ford F-450',date:'2026-03-30',customer:'Permian Energy LLC',jobSite:'Baker Well Site #3',jobSiteAddr:'1450 County Road 42, Midland, TX',jobSiteCoords:[31.8667,-102.3167],reportedHours:'08:00 – 17:00 (9h)',invoiceAmount:'$1,350',status:'flagged',issues:[{type:'Time Discrepancy',severity:'medium',desc:'Reported arrival (08:00) vs GPS arrival (08:23) — 23 minutes late.'},{type:'Time Discrepancy',severity:'medium',desc:'Reported departure (17:00) vs GPS departure (16:45) — left 15 min early.'},{type:'Unauthorized Stop',severity:'medium',desc:'Extended stop at gas station during work hours (32 minutes).'},{type:'Billing Mismatch',severity:'high',desc:'Reported 9 hours but only 7.8 hours on-site per GPS. Difference: -1.2h (-$175).'}],aiSummary:'Driver arrived 23 minutes late and departed 15 minutes early. Spent 32 minutes at gas station during work hours. Actual time on-site (7.8 hours) is significantly less than reported (9 hours). Recommend adjusting invoice to reflect actual hours.',recommendations:[{severity:'critical',text:'Adjust invoice downward. Driver reported 1.2 more hours than GPS confirms. Recommend billing for 7.8 hours instead of 9 hours.'},{severity:'warning',text:'Unauthorized stops detected. Review stop locations and durations.'},{severity:'warning',text:'Significant time discrepancies. Verify with driver before invoicing.'}],reported:{hours:9},gpsActual:{hours:7.8},arrivalReported:'08:00',arrivalGPS:'08:23',arrivalDiff:'23 min late',departureReported:'17:00',departureGPS:'16:45',departureDiff:'15 min early',totalHoursReported:9,totalHoursGPS:7.8,gpsMetrics:{distance:'124.5 km',driveTime:'1h 25m',timeOnSite:'7h 50m',numStops:2},activityTimeline:[{type:'site',name:'Baker Well Site #3',addr:'1450 County Road 42, Midland TX',arrival:'08:23 AM',departure:'16:45 PM',duration:'8h 22m',flagged:false},{type:'stop',name:'Gas Station',addr:'Circle K Gas Station, Midland TX',arrival:'07:15 AM',departure:'07:47 AM',duration:'0h 32m',flagged:true}],outbound:[[31.9973,-102.0779],[31.9500,-102.1500],[31.9200,-102.2000],[31.9000,-102.2500],[31.8800,-102.2900],[31.8667,-102.3167]],returning:[[31.8667,-102.3167],[31.8900,-102.2700],[31.9200,-102.2100],[31.9600,-102.1400],[31.9973,-102.0779]],stopLocations:[{coords:[31.9200,-102.1700],label:'Circle K Gas Station'}]},
-  {id:'TK-2026-0893',assetId:'UNIT-22',driver:'Mike Torres',esn:'204206516',asset:'Unit 22 — Ford F-350',date:'2026-03-30',customer:'Apache Oil Field Services',jobSite:'Apache Oil Field Station',jobSiteAddr:'7823 W Industrial Blvd, Odessa TX',jobSiteCoords:[31.8457,-102.3676],reportedHours:'07:30 – 15:30 (8h)',invoiceAmount:'$1,200',status:'verified',issues:[],aiSummary:'Perfect match. Driver arrived 2 minutes early and departed 2 minutes late. No unauthorized stops. Actual hours (8.07) match reported hours (8). Recommend approval.',recommendations:[],reported:{hours:8},gpsActual:{hours:8.07},arrivalReported:'07:30',arrivalGPS:'07:28',arrivalDiff:'2 min early',departureReported:'15:30',departureGPS:'15:32',departureDiff:'2 min late',totalHoursReported:8,totalHoursGPS:8.07,gpsMetrics:{distance:'89.2 km',driveTime:'1h 10m',timeOnSite:'8h 04m',numStops:1},activityTimeline:[{type:'site',name:'Apache Oil Field Station',addr:'7823 W Industrial Blvd, Odessa TX',arrival:'07:28 AM',departure:'15:32 PM',duration:'8h 04m',flagged:false}],outbound:[[31.9973,-102.0779],[31.9700,-102.1400],[31.9300,-102.2200],[31.8900,-102.2900],[31.8457,-102.3676]],returning:[[31.8457,-102.3676],[31.8700,-102.3200],[31.9000,-102.2700],[31.9400,-102.2000],[31.9973,-102.0779]],stopLocations:[]},
-  {id:'TK-2026-0892',assetId:'UNIT-07',driver:'James Holloway',esn:'204206515',asset:'Unit 07 — Chevy Silverado 3500',date:'2026-03-30',customer:'Permian Basin Drilling Co',jobSite:'Permian Basin Drill Site 7',jobSiteAddr:'FM 1788, Gardendale TX',jobSiteCoords:[31.8667,-102.3167],reportedHours:'06:00 – 18:00 (12h)',invoiceAmount:'$2,100',status:'flagged',issues:[{type:'Route Inefficiency',severity:'medium',desc:'Driver took inefficient route adding approximately 18 miles vs optimal path.'},{type:'Unauthorized Stop',severity:'medium',desc:'Extended lunch break (52 min) at non-jobsite location during billable hours.'},{type:'Time Discrepancy',severity:'medium',desc:'Left job site 40 minutes before reported end time.'}],aiSummary:'Driver took inefficient route and had extended lunch break (52 min). Left job site 40 minutes early. Actual billable time should be reduced by approximately 1.5 hours.',recommendations:[{severity:'warning',text:'Reduce billable hours by ~1.5h to reflect actual on-site time per GPS data.'},{severity:'warning',text:'Review route policy — driver added significant mileage vs optimal path.'}],reported:{hours:12},gpsActual:{hours:10.5},arrivalReported:'06:00',arrivalGPS:'06:05',arrivalDiff:'5 min late',departureReported:'18:00',departureGPS:'17:20',departureDiff:'40 min early',totalHoursReported:12,totalHoursGPS:10.5,gpsMetrics:{distance:'198.4 km',driveTime:'2h 30m',timeOnSite:'10h 30m',numStops:3},activityTimeline:[{type:'site',name:'Permian Basin Drill Site 7',addr:'FM 1788, Gardendale TX',arrival:'06:05 AM',departure:'17:20 PM',duration:'11h 15m',flagged:false},{type:'stop',name:'Lunch Stop',addr:'Subway, Odessa TX',arrival:'12:00 PM',departure:'12:52 PM',duration:'0h 52m',flagged:true}],outbound:[[31.9973,-102.0779],[31.9800,-102.1100],[31.9600,-102.1600],[31.9400,-102.2000],[31.9000,-102.2900],[31.8667,-102.3167]],returning:[[31.8667,-102.3167],[31.9000,-102.2500],[31.9400,-102.2000],[31.9700,-102.1300],[31.9973,-102.0779]],stopLocations:[{coords:[31.9600,-102.1600],label:'Lunch Stop'}]},
-  {id:'TK-2026-0891',assetId:'UNIT-03',driver:'Derek Nash',esn:'204206510',asset:'Unit 03 — Ford F-250',date:'2026-03-30',customer:'Big Spring Energy Services',jobSite:'Spraberry Trend Well #301',jobSiteAddr:'Near Big Spring, TX',jobSiteCoords:[32.2501,-101.4785],reportedHours:'06:00 – 13:30 (7.5h)',invoiceAmount:'$1,125',status:'verified',issues:[],aiSummary:'Clean trip. Driver followed optimal route, arrived on time, and departed within expected window. Hours match GPS data. Ready for invoicing.',recommendations:[],reported:{hours:7.5},gpsActual:{hours:7.4},arrivalReported:'06:00',arrivalGPS:'06:02',arrivalDiff:'2 min late',departureReported:'13:30',departureGPS:'13:26',departureDiff:'4 min early',totalHoursReported:7.5,totalHoursGPS:7.4,gpsMetrics:{distance:'110.2 km',driveTime:'1h 15m',timeOnSite:'7h 24m',numStops:1},activityTimeline:[{type:'site',name:'Spraberry Trend Well #301',addr:'Near Big Spring, TX',arrival:'06:02 AM',departure:'13:26 PM',duration:'7h 24m',flagged:false}],outbound:[[31.9973,-102.0779],[32.0300,-101.9800],[32.0700,-101.8600],[32.1100,-101.7500],[32.1700,-101.6400],[32.2501,-101.4785]],returning:[[32.2501,-101.4785],[32.2000,-101.5600],[32.1500,-101.6700],[32.0600,-101.8900],[31.9973,-102.0779]],stopLocations:[]},
-  {id:'TK-2026-0890',assetId:'UNIT-18',driver:'Tony Burch',esn:'204206512',asset:'Unit 18 — Ford F-450',date:'2026-03-30',customer:'Wolfcamp Resources',jobSite:'Wolfcamp Well #134',jobSiteAddr:'Near Odessa, TX',jobSiteCoords:[31.8457,-102.3676],reportedHours:'07:00 – 15:30 (8.5h)',invoiceAmount:'$1,475',status:'flagged',issues:[{type:'Unauthorized Stop',severity:'medium',desc:'55 min stop at Odessa truck stop during work hours — exceeds 30 min policy threshold.'}],aiSummary:'Driver had a 55 minute stop at a truck stop during work hours. Stop duration exceeds the 30-minute policy limit. Recommend reviewing with driver and adjusting billable hours.',recommendations:[{severity:'warning',text:'Deduct 25 min from billable hours (55 min stop - 30 min policy allowance).'}],reported:{hours:8.5},gpsActual:{hours:7.9},arrivalReported:'07:00',arrivalGPS:'07:00',arrivalDiff:'On Time',departureReported:'15:30',departureGPS:'15:30',departureDiff:'On Time',totalHoursReported:8.5,totalHoursGPS:7.9,gpsMetrics:{distance:'95.8 km',driveTime:'1h 05m',timeOnSite:'7h 54m',numStops:2},activityTimeline:[{type:'site',name:'Wolfcamp Well #134',addr:'Near Odessa, TX',arrival:'07:00 AM',departure:'15:30 PM',duration:'8h 30m',flagged:false},{type:'stop',name:'Odessa Truck Stop',addr:'I-20 & TX-385, Odessa TX',arrival:'11:00 AM',departure:'11:55 AM',duration:'0h 55m',flagged:true}],outbound:[[31.9973,-102.0779],[31.9700,-102.1400],[31.9300,-102.2200],[31.8900,-102.2900],[31.8600,-102.3400],[31.8457,-102.3676]],returning:[[31.8457,-102.3676],[31.8700,-102.3200],[31.9000,-102.2700],[31.9400,-102.2000],[31.9973,-102.0779]],stopLocations:[{coords:[31.9200,-102.2000],label:'Odessa Truck Stop'}]},
-];
-
-// ─── LIST ──────────────────────────────────────────────────────────────────────
-let selectedIds=new Set();
-
-function renderStats(){
-  document.getElementById('statTotal').textContent=TICKETS.length;
-  document.getElementById('statVerified').textContent=TICKETS.filter(t=>t.status==='verified').length;
-  document.getElementById('statFlagged').textContent=TICKETS.filter(t=>t.status==='flagged').length;
-  document.getElementById('statProcessing').textContent=TICKETS.filter(t=>t.status==='processing').length;
-}
-
-function renderList(){
-  renderStats();
-  document.getElementById('ticketList').innerHTML=TICKETS.map(t=>renderRow(t)).join('');
-  updateBulkBar();
-}
-
-function renderRow(t){
-  const slbl={flagged:'⚠️ Flagged',verified:'✅ Verified',processing:'🔄 Processing',pending:'⏳ Pending'}[t.status]||t.status;
-  const scls={flagged:'badge-flagged',verified:'badge-verified',processing:'badge-processing',pending:'badge-pending'}[t.status]||'badge-pending';
-  const chk=selectedIds.has(t.id)?'checked':'';
-  const issH=t.issues.length>0?`<div class="issue-area"><div class="issue-cnt">⚠️ ${t.issues.length} Issue${t.issues.length>1?'s':''} Detected</div><div class="issue-tags">${t.issues.slice(0,3).map(i=>`<span class="itag ${i.severity==='high'?'critical':''}">${i.type.toLowerCase()}</span>`).join('')}${t.issues.length>3?`<span class="itag">+${t.issues.length-3} more</span>`:''}</div></div>`:'';
-  const sumH=t.aiSummary?`<div class="ai-sum ${t.issues.length>0?'flagged-sum':''}">"${t.aiSummary}"</div>`:'';
-  return`<div class="trow ${t.status}" id="row-${t.id}">
-  <div class="trow-top">
-    <input type="checkbox" class="ticket-checkbox" ${chk} onchange="toggleSel('${t.id}')" onclick="event.stopPropagation()" style="width:16px;height:16px;cursor:pointer;accent-color:var(--accent);">
-    <span class="trow-id">${t.id}</span>
-    <span class="badge ${scls}">${slbl}</span>
-    <span class="trow-meta">${t.driver} · ${t.assetId} · ${t.date}</span>
-    <div class="trow-actions">
-      <button class="vd-btn" onclick="openDetail('${t.id}')">View Details →</button>
-      <button class="del-btn" onclick="delTicket('${t.id}',event)" title="Delete">🗑</button>
-    </div>
-  </div>
-  <div class="trow-body">
-    <div class="tbi"><label>Job Site</label><span>${t.jobSite}</span></div>
-    <div class="tbi"><label>Reported Hours</label><span>${t.reportedHours}</span></div>
-    <div class="tbi"><label>Invoice Amount</label><span>${t.invoiceAmount}</span></div>
-  </div>
-  ${issH}${sumH}
-</div>`;
-}
-
-function toggleSel(id){selectedIds.has(id)?selectedIds.delete(id):selectedIds.add(id);updateBulkBar();}
-function toggleSelectAll(){const a=document.getElementById('selAllCb').checked;if(a)TICKETS.forEach(t=>selectedIds.add(t.id));else selectedIds.clear();TICKETS.forEach(t=>{const c=document.querySelector(`#row-${t.id} .ticket-checkbox`);if(c)c.checked=a;});updateBulkBar();}
-function updateBulkBar(){const n=selectedIds.size,b=document.getElementById('bulkBar');if(n>0){b.style.display='flex';document.getElementById('bulkBarLabel').textContent=`${n} ticket${n>1?'s':''} selected`;}else b.style.display='none';}
-function delTicket(id,e){e.stopPropagation();if(!confirm(`Delete ticket ${id}?`))return;const i=TICKETS.findIndex(t=>t.id===id);if(i>-1)TICKETS.splice(i,1);selectedIds.delete(id);renderList();}
-function exportSelected(){
-  const ex=selectedIds.size>0?TICKETS.filter(t=>selectedIds.has(t.id)):TICKETS;
-  const rows=['ticket_id,leg,lat,lng,point_index,driver,asset,esn'];
-  ex.forEach(t=>{(t.outbound||[]).forEach((p,i)=>rows.push(`${t.id},outbound,${p[0]},${p[1]},${i+1},"${t.driver}","${t.asset}",${t.esn}`));(t.returning||[]).forEach((p,i)=>rows.push(`${t.id},return,${p[0]},${p[1]},${i+1},"${t.driver}","${t.asset}",${t.esn}`));});
-  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([rows.join('\n')],{type:'text/csv'}));a.download=`gps_export_${new Date().toISOString().slice(0,10)}.csv`;a.click();
-}
-
-// ─── DETAIL ────────────────────────────────────────────────────────────────────
-let dMap=null;
-
-function openDetail(id){
-  const t=TICKETS.find(t=>t.id===id);if(!t)return;
-  document.getElementById('view-list').style.display='none';
-  document.getElementById('view-detail').style.display='block';
-  window.scrollTo(0,0);
-  buildDetail(t);
-}
-
-function closeDetail(){
-  document.getElementById('view-detail').style.display='none';
-  document.getElementById('view-list').style.display='block';
-  if(dMap){dMap.remove();dMap=null;}
-}
-
-function buildDetail(t){
-  const n=t.issues.length;
-  const dh=(t.totalHoursGPS-t.totalHoursReported).toFixed(1);
-  const arrBad=t.arrivalDiff.includes('late')||t.arrivalDiff.includes('early');
-  const depBad=t.departureDiff.includes('early')||t.departureDiff.includes('late');
-  const hrsBad=Math.abs(t.totalHoursGPS-t.totalHoursReported)>0.2;
-
-  const banner=n>0?`
-  <div class="ibanner">
-    <div class="ibanner-top"><span style="font-size:18px">⚠️</span><span class="ibanner-title">Issues Detected — Review Required</span>
-      ${t.issues.filter(i=>i.severity==='high').length>0?`<span class="sev-pill sev-critical">${t.issues.filter(i=>i.severity==='high').length} Critical</span>`:''}
-      ${t.issues.filter(i=>i.severity==='medium').length>0?`<span class="sev-pill sev-medium">${t.issues.filter(i=>i.severity==='medium').length} Medium</span>`:''}
-    </div>
-    <div class="imetrics">
-      <div class="imet"><div class="imet-lbl">📍 Location Match</div><div class="imet-val warning">Check Required</div></div>
-      <div class="imet"><div class="imet-lbl">🕐 Time Accuracy</div><div class="imet-val danger">${dh}h Off</div></div>
-      <div class="imet"><div class="imet-lbl">🛑 Extra Stops</div><div class="imet-val warning">${t.stopLocations.length}</div></div>
-      <div class="imet"><div class="imet-lbl">💰 Impact</div><div class="imet-val danger">~$${Math.abs(Math.round(parseFloat(dh)*175))}</div></div>
-    </div>
-    <div class="ai-block">${t.aiSummary}</div>
-    ${t.recommendations.length>0?`<div style="font-size:11px;font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Recommended Actions</div>
-    <div class="recs">${t.recommendations.map(r=>`<div class="rec"><div class="rec-dot ${r.severity}"></div><span>${r.text}</span></div>`).join('')}</div>`:''}
-    <div class="rvg">
-      <div class="rvg-col"><div class="rvg-lbl">Reported</div><div class="rvg-val rep">${t.totalHoursReported}h</div></div>
-      <div class="rvg-col"><div class="rvg-lbl">GPS Actual</div><div class="rvg-val act">${t.totalHoursGPS}h</div></div>
-      <div class="rvg-col"><div class="rvg-lbl">Difference</div><div class="rvg-val diff">${dh}h</div></div>
-    </div>
-  </div>`:`<div class="ok-banner">✅ No issues detected — this ticket is ready for invoicing. ${t.aiSummary}</div>`;
-
-  const tlHtml=t.activityTimeline.map((item,i)=>`
-  <div class="at-item">
-    <div class="at-dcol"><div class="at-dot ${item.type}"></div>${i<t.activityTimeline.length-1?'<div class="at-conn"></div>':''}</div>
-    <div class="at-body">
-      <div class="at-hdr"><div><div class="at-name">${item.type==='site'?'📍':'⚠️'} ${item.name}</div><div class="at-addr">${item.addr}</div></div>${item.flagged?'<span class="at-flag-b">⚠️ Flagged</span>':''}</div>
-      <div class="at-times">
-        <div class="at-ti"><label>Arrival</label><span>${item.arrival}</span></div>
-        <div class="at-ti"><label>Departure</label><span>${item.departure}</span></div>
-        <div class="at-ti"><label>Duration</label><span class="${item.flagged?'hl':''}">${item.duration}</span></div>
-      </div>
-    </div>
-  </div>`).join('');
-
-  document.getElementById('detailContainer').innerHTML=`
-  <div class="dtop">
-    <button class="back-btn" onclick="closeDetail()">← Back</button>
-    <div class="dtop-info">
-      <div class="dtop-id">${t.id} ${n>0?`<span class="badge badge-flagged">⚠️ ${n} Issue${n>1?'s':''}</span>`:''}</div>
-      <div class="dtop-meta">${t.driver} · ${t.assetId} · ${t.date}</div>
-    </div>
-    <div class="dtop-right">
-      <button class="btn btn-outline" onclick="exportOneGPS('${t.id}')">⬇ Export GPS</button>
-      ${n===0?`<button class="btn btn-success" onclick="markVerified('${t.id}')">✅ Mark Verified</button>`:`<button class="btn btn-warn" onclick="markVerified('${t.id}')">✓ Override & Verify</button>`}
-    </div>
-  </div>
-  ${banner}
-  <div class="d2col">
-    <div class="dcard">
-      <div class="dcard-title">📋 Job Details</div>
-      <div class="jd-site">📍 ${t.jobSite}</div>
-      <div class="jd-addr">${t.jobSiteAddr}</div>
-      <div class="jd-grid">
-        <div class="jd-f"><label>Driver</label><span>${t.driver}</span></div>
-        <div class="jd-f"><label>Asset</label><span>${t.assetId}</span></div>
-        <div class="jd-f"><label>ESN</label><span style="font-family:var(--mono);font-size:11px">${t.esn}</span></div>
-        <div class="jd-f"><label>Customer</label><span>${t.customer}</span></div>
-      </div>
-      <div style="font-size:10px;color:var(--text-dim);font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px">Invoice Amount</div>
-      <div class="invoice">${t.invoiceAmount}</div>
-    </div>
-    <div class="dcard" style="padding:0;overflow:hidden;position:relative;">
-      <div style="padding:12px 16px 10px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
-        <div class="dcard-title" style="margin:0">🗺️ Route Visualization</div>
-        <span style="font-size:11px;color:var(--text-dim)">GPS tracking start to end</span>
-      </div>
-      <div class="map-wrap"><div id="detail-map"></div>
-      <div class="map-legend"><div class="ml-t">Legend</div>
-        <div class="ml-item"><div class="ml-dot" style="background:var(--accent)"></div> Job Site</div>
-        <div class="ml-item"><div class="ml-dot" style="background:var(--success)"></div> Home Yard</div>
-        ${t.stopLocations.length>0?'<div class="ml-item"><div class="ml-dot" style="background:var(--danger)"></div> ⚠️ Stop</div>':''}
-        <div class="ml-item"><div class="ml-line" style="background:var(--accent)"></div> ➡ Outbound</div>
-        <div class="ml-item"><div class="ml-dash"></div> ↩ Return</div>
-      </div></div>
-    </div>
-  </div>
-  <div class="dcard" style="margin-bottom:16px">
-    <div class="dcard-title">🕐 Time Verification Analysis</div>
-    <div class="tv-grid">
-      <div class="tv-item ${arrBad?'bad':''}">
-        <div class="tv-lbl">Arrival Time ${arrBad?`<span class="tv-flag">⚠️ ${t.arrivalDiff}</span>`:''}</div>
-        <div class="tv-times">
-          <div class="tvtb"><div class="tvtb-lbl">Reported</div><div class="tvtb-val">${t.arrivalReported}</div></div>
-          <div class="tvtb ${arrBad?'bad':'ok'}"><div class="tvtb-lbl">GPS Actual</div><div class="tvtb-val">${t.arrivalGPS}</div></div>
-        </div>
-        <div class="tv-bar-w"><div class="tv-bar ${arrBad?'off':'on'}" style="width:100%"></div></div>
-        <div class="tv-bar-lbl"><span>On Time</span><span>${arrBad?t.arrivalDiff:'✓'}</span></div>
-      </div>
-      <div class="tv-item ${depBad?'bad':''}">
-        <div class="tv-lbl">Departure Time ${depBad?`<span class="tv-flag">⚠️ ${t.departureDiff}</span>`:''}</div>
-        <div class="tv-times">
-          <div class="tvtb"><div class="tvtb-lbl">Reported</div><div class="tvtb-val">${t.departureReported}</div></div>
-          <div class="tvtb ${depBad?'bad':'ok'}"><div class="tvtb-lbl">GPS Actual</div><div class="tvtb-val">${t.departureGPS}</div></div>
-        </div>
-        <div class="tv-bar-w"><div class="tv-bar ${depBad?'off':'on'}" style="width:100%"></div></div>
-        <div class="tv-bar-lbl"><span>On Time</span><span>${depBad?t.departureDiff:'✓'}</span></div>
-      </div>
-      <div class="tv-item ${hrsBad?'bad':''}">
-        <div class="tv-lbl">Total Hours on Site ${hrsBad?`<span class="tv-flag">⚠️ ${dh}h diff</span>`:''}</div>
-        <div class="tv-times">
-          <div class="tvtb"><div class="tvtb-lbl">Reported</div><div class="tvtb-val">${t.totalHoursReported}h</div></div>
-          <div class="tvtb ${hrsBad?'bad':'ok'}"><div class="tvtb-lbl">GPS Actual</div><div class="tvtb-val">${t.totalHoursGPS}h</div></div>
-        </div>
-        <div class="tv-bar-w"><div class="tv-bar ${hrsBad?'off':'on'}" style="width:${Math.min(100,(t.totalHoursGPS/t.totalHoursReported)*100)}%"></div></div>
-        <div class="tv-bar-lbl"><span>Reported ${t.totalHoursReported}h</span><span>Actual ${t.totalHoursGPS}h</span></div>
-        ${hrsBad?`<p style="margin-top:6px;font-size:11px;color:var(--danger);font-weight:600">⚠️ Billing Impact: Driver reported ${Math.abs(parseFloat(dh))}h discrepancy vs GPS data.</p>`:''}
-      </div>
-    </div>
-  </div>
-  <div class="d2col" style="margin-bottom:16px">
-    <div class="dcard" style="grid-column:1/-1">
-      <div style="display:grid;grid-template-columns:1fr 280px;gap:20px">
-        <div>
-          <div class="dcard-title">📊 Activity Timeline</div>
-          <div class="atl">${tlHtml}</div>
-          <div style="display:flex;justify-content:space-between;margin-top:10px;padding-top:10px;border-top:1px solid var(--border);font-size:12px;color:var(--text-dim)">
-            <span>Total Stops: <strong style="color:var(--text)">${t.activityTimeline.length}</strong></span>
-            <span>Flagged: <strong style="color:var(--danger)">${t.activityTimeline.filter(a=>a.flagged).length}</strong></span>
-          </div>
-        </div>
-        <div>
-          <div class="dcard-title">📡 GPS Metrics</div>
-          <div class="gm-grid">
-            <div class="gm"><span class="gm-lbl">Total Distance</span><span class="gm-val">${t.gpsMetrics.distance}</span></div>
-            <div class="gm"><span class="gm-lbl">Drive Time</span><span class="gm-val">${t.gpsMetrics.driveTime}</span></div>
-            <div class="gm"><span class="gm-lbl">Time On-Site</span><span class="gm-val">${t.gpsMetrics.timeOnSite}</span></div>
-            <div class="gm"><span class="gm-lbl">Number of Stops</span><span class="gm-val">${t.gpsMetrics.numStops}</span></div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-  ${n>0?`<div class="dcard"><div class="dcard-title">⚠️ Issues Detected (${n})</div><div class="issues-list">${t.issues.map(i=>`<div class="ii ${i.severity==='high'?'crit':''}"><div class="ii-top"><span class="ii-type">⚠️ ${i.type}</span><span class="ii-sev ${i.severity}">${i.severity}</span></div><div class="ii-desc">${i.desc}</div></div>`).join('')}</div></div>`:''}`;
-
-  setTimeout(()=>{
-    if(dMap){dMap.remove();dMap=null;}
-    dMap=L.map('detail-map',{zoomControl:true,attributionControl:false});
-    L.tileLayer('https://mt{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',{subdomains:['0','1','2','3'],maxZoom:20}).addTo(dMap);
-    const mkIco=cls=>L.divIcon({className:'',html:`<div class="${cls}"></div>`,iconSize:[26,26],iconAnchor:[13,13]});
-    if(t.outbound?.length>1){L.polyline(t.outbound,{color:'#fff',weight:7,opacity:.5}).addTo(dMap);L.polyline(t.outbound,{color:'#0C6FE3',weight:4,opacity:1}).addTo(dMap);}
-    if(t.returning?.length>1){L.polyline(t.returning,{color:'#fff',weight:7,opacity:.4}).addTo(dMap);L.polyline(t.returning,{color:'#f59e0b',weight:4,opacity:1,dashArray:'8 5'}).addTo(dMap);}
-    L.marker(HOME_YARD.coords,{icon:mkIco('yard-marker')}).addTo(dMap).bindPopup(`🏠 ${HOME_YARD.name}`);
-    L.marker(t.jobSiteCoords,{icon:mkIco('site-marker')}).addTo(dMap).bindPopup(`📍 ${t.jobSite}`);
-    t.stopLocations.forEach(s=>L.marker(s.coords,{icon:mkIco('stop-marker')}).addTo(dMap).bindPopup(`⚠️ ${s.label}`));
-    const all=[...(t.outbound||[]),...(t.returning||[]),HOME_YARD.coords,t.jobSiteCoords];
-    if(all.length>1)dMap.fitBounds(L.latLngBounds(all),{padding:[30,30]});else dMap.setView(t.jobSiteCoords,10);
-  },100);
-}
-
-function markVerified(id){const t=TICKETS.find(t=>t.id===id);if(!t)return;t.status='verified';t.issues=[];t.aiSummary='Manually verified. Job approved for invoicing.';t.recommendations=[];renderList();closeDetail();}
-function exportOneGPS(id){const t=TICKETS.find(t=>t.id===id);if(!t)return;const rows=['leg,lat,lng,point_index,driver,asset,esn'];(t.outbound||[]).forEach((p,i)=>rows.push(`outbound,${p[0]},${p[1]},${i+1},"${t.driver}","${t.asset}",${t.esn}`));(t.returning||[]).forEach((p,i)=>rows.push(`return,${p[0]},${p[1]},${i+1},"${t.driver}","${t.asset}",${t.esn}`));const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([rows.join('\n')],{type:'text/csv'}));a.download=`${id}_GPS.csv`;a.click();}
-
-// ─── UPLOAD MODAL ──────────────────────────────────────────────────────────────
-let mStep=1,selFiles=[];
-function openUpload(){mStep=1;selFiles=[];resetModal();document.getElementById('uploadModal').classList.add('open');}
-function closeUpload(){document.getElementById('uploadModal').classList.remove('open');}
-function setStepInd(a){[1,2,3].forEach(n=>{const el=document.getElementById(`step-ind-${n}`);el.className='mstep'+(n<a?' done':n===a?' active':'');el.querySelector('.mstep-n').textContent=n<a?'✓':n;});}
-function resetModal(){document.getElementById('modal-step-1').style.display='';document.getElementById('modal-step-2').style.display='none';document.getElementById('modal-step-3').style.display='none';document.getElementById('fqWrap').style.display='none';document.getElementById('fqList').innerHTML='';document.getElementById('ticketFileInput').value='';document.getElementById('modalProcessBtn').disabled=true;document.getElementById('modalProcessBtn').textContent='📤 Process Tickets';document.getElementById('modalCancelBtn').textContent='Cancel';document.getElementById('footerNote').textContent='Select one or more ticket images to begin';setStepInd(1);}
-function onFilesSelected(e){selFiles=Array.from(e.target.files);if(!selFiles.length)return;document.getElementById('fqCount').textContent=selFiles.length;document.getElementById('fqList').innerHTML=selFiles.map(f=>`<div class="fqi"><span>📄</span><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${f.name}</span><span>${(f.size/1024).toFixed(0)} KB</span></div>`).join('');document.getElementById('fqWrap').style.display='block';document.getElementById('modalProcessBtn').disabled=false;document.getElementById('modalProcessBtn').textContent=`📤 Process ${selFiles.length} Ticket${selFiles.length>1?'s':''}`;document.getElementById('footerNote').textContent=`${selFiles.length} ticket${selFiles.length>1?'s':''} ready`;}
-function parseOCR(text){
-  const lines=text.split('\n').map(l=>l.trim()).filter(Boolean);
-  const r={jobNumber:'',date:'',startTime:'',endTime:'',assetId:'',driverName:'',customerName:'',jobSite:''};
-  for(const line of lines){
-    // Job number — JOB NO, WO#, TK-, Job #, Report #
-    if(!r.jobNumber){const m=line.match(/(?:JOB\s*(?:NO|NUM|NUMBER|#|REPORT)?|REPORT\s*#|WO\s*#?|TK[-\s]?)[:\s]*([A-Z0-9][A-Z0-9\-]{2,})/i);if(m)r.jobNumber=m[1].trim();}
-    // Date — M/D/YY, MM-DD-YYYY, Month D YYYY
-    if(!r.date){const m=line.match(/\b(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}|(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\w*\.?\s+\d{1,2},?\s*\d{4})\b/i);if(m)r.date=m[1];}
-    // Times — pick up first two HH:MM AM/PM occurrences per ticket
-    const times=line.match(/\b(\d{1,2}:\d{2}\s*(?:AM|PM))/gi);
-    if(times){if(!r.startTime)r.startTime=times[0];if(times[1]&&!r.endTime)r.endTime=times[1];}
-    // Asset ID — handles "Asset ID (Truck #): Unit 452" and "Unit 14" and "Truck 7"
-    if(!r.assetId){
-      // Pattern 1: label with colon then "Unit/Truck NNN"
-      const m1=line.match(/(?:ASSET\s*ID|TRUCK|UNIT|VEHICLE|EQUIPMENT)[^:]*:[\s]*(?:Unit\s*|Truck\s*|Vehicle\s*)?([A-Z0-9\-]{1,10})/i);
-      if(m1)r.assetId='UNIT-'+m1[1].replace(/^UNIT[-\s]*/i,'').trim().toUpperCase();
-      // Pattern 2: standalone "Unit 452" anywhere in line
-      if(!r.assetId){const m2=line.match(/\b(?:Unit|Truck)\s+(\d{1,4})\b/i);if(m2)r.assetId='UNIT-'+m2[1];}
-    }
-    // Driver name — "Driver Name:", "Driver:", "Operator:", "Technician:"
-    if(!r.driverName){const m=line.match(/(?:DRIVER\s*(?:NAME)?|OPERATOR|TECHNICIAN|TECH|EMPLOYEE)[:\s]+([A-Za-z]+(?:\s+[A-Za-z]+)+)/i);if(m){const val=m[1].trim();if(val.length>2&&!/^(name|date|time|unit|truck|job|report)$/i.test(val))r.driverName=val;}}
-    // Customer
-    if(!r.customerName){const m=line.match(/(?:CUSTOMER\s*(?:NAME)?|CLIENT|COMPANY|BILL\s*TO)[:\s]+(.+)/i);if(m)r.customerName=m[1].trim();}
-    // Job site
-    if(!r.jobSite){const m=line.match(/(?:LOCATION|JOB\s*SITE|SITE|WELL\s*(?:NAME|SITE|#)?|FIELD)[:\s]+(.+)/i);if(m)r.jobSite=m[1].trim();}
-  }
-  return r;
-}
-function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
-function toDataURL(f){return new Promise((res,rej)=>{const r=new FileReader();r.onload=e=>res(e.target.result);r.onerror=rej;r.readAsDataURL(f);});}
-function setBRow(id,cls,icon,name,asd,sc,st){const row=document.getElementById(id);if(!row)return;row.className=`brow ${cls}`;row.innerHTML=`<div class="bri">${icon}</div><div><div class="brn">${name}</div></div><div class="brf">${asd}</div><div class="brs ${sc}">${st}</div>`;}
-
-async function procOne(file,rowId){
-  setBRow(rowId,'processing','🔎',file.name,'—','proc','Reading…');
-  let ocr={}, ocrFailed=false;
-  try{
-    const dataUrl=await toDataURL(file);
-    // Simpler Tesseract v4 init — avoid options object that can throw on some CDN builds
-    const w=await Tesseract.createWorker('eng', 1, {
-      workerPath: 'https://cdn.jsdelivr.net/npm/tesseract.js@4.1.1/dist/worker.min.js',
-      langPath:   'https://cdn.jsdelivr.net/npm/tesseract.js-lang@4.0.0/lang/',
-      corePath:   'https://cdn.jsdelivr.net/npm/tesseract.js-core@4.0.4/tesseract-core-simd-lstm.wasm.js',
-      logger: m => { if(m.status==='recognizing text') setBRow(rowId,'processing','🔎',file.name,'—','proc',`OCR ${Math.round((m.progress||0)*100)}%`); }
-    });
-    const{data:{text}}=await w.recognize(dataUrl);
-    await w.terminate();
-    // DEBUG — open browser console (Cmd+Option+J) to see raw OCR output
-    console.log('=== RAW OCR TEXT ===');
-    console.log(text);
-    console.log('=== END OCR TEXT ===');
-    ocr=parseOCR(text);
-  }catch(e){
-    // OCR failed — don't bail. Always create a card flagged for manual entry.
-    ocrFailed=true;
-    ocr={};
-    setBRow(rowId,'processing','📋',file.name,'OCR failed — building card…','proc','Creating…');
-    await sleep(400);
-  }
-  setBRow(rowId,'processing','🔍',file.name,'Asset lookup…','proc','API…');
-  await sleep(600);
-  const aid=(ocr.assetId||'').toUpperCase().replace(/\s+/g,'-');
-  const adat=MOCK_ASSET_DB[aid]||{esn:'204206'+Math.floor(500+Math.random()*99),vehicle:aid||'Unknown'};
-  setBRow(rowId,'processing','📡',file.name,adat.vehicle,'proc','Readings…');
-  await sleep(700);
-  const miss=[];
-  if(!ocr.jobNumber)miss.push('Job #');if(!ocr.assetId)miss.push('Asset ID');if(!ocr.driverName)miss.push('Driver');
-  const nr=miss.length>0||ocrFailed;
-  const issDesc=ocrFailed
-    ?`OCR could not read "${file.name}". Image may be blurry, low-contrast, or handwritten. All fields need manual entry.`
-    :`Missing fields from OCR scan: ${miss.join(', ')}. Please review and complete.`;
-  const nt={id:ocr.jobNumber||`TK-SCAN-${Date.now().toString().slice(-4)}`,assetId:ocr.assetId||aid||'TBD',driver:ocr.driverName||'Unassigned',asset:adat.vehicle,esn:adat.esn,date:ocr.date||new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}),customer:ocr.customerName||'',jobSite:ocr.jobSite||'Job Site TBD',jobSiteAddr:'',jobSiteCoords:[31.9973,-102.0779],reportedHours:`${ocr.startTime||'—'} – ${ocr.endTime||'—'}`,invoiceAmount:'TBD',status:'flagged',issues:[{type:ocrFailed?'OCR Failed':'Incomplete Ticket Data',severity:'medium',desc:issDesc}],aiSummary:ocrFailed?`OCR failed for "${file.name}". Manual data entry required before GPS verification.`:`Missing fields: ${miss.join(', ')}. Manual review required.`,recommendations:[{severity:'warning',text:ocrFailed?'Open this card and fill in all fields manually':'Complete the missing fields: '+miss.join(', ')}],reported:{hours:0},gpsActual:{hours:0},arrivalReported:ocr.startTime||'—',arrivalGPS:'—',arrivalDiff:'—',departureReported:ocr.endTime||'—',departureGPS:'—',departureDiff:'—',totalHoursReported:0,totalHoursGPS:0,gpsMetrics:{distance:'—',driveTime:'—',timeOnSite:'—',numStops:0},activityTimeline:[],outbound:[],returning:[],stopLocations:[]};
-  TICKETS.unshift(nt);renderList();
-  const rowLabel=ocrFailed?'⚠️ OCR failed — enter manually':`⚠️ Missing: ${miss.join(', ')}`;
-  if(nr){setBRow(rowId,'done-flag','⚠️',file.name,adat.vehicle,'flag',rowLabel);return{status:'review',file:file.name,ticket:nt};}
-  setBRow(rowId,'done-ok','✅',file.name,`${adat.vehicle} · ${ocr.driverName}`,'ok','✅ Saved');
-  return{status:'ok',file:file.name,ticket:nt};
-}
-
-async function modalNext(){
-  if(mStep===1){
-    if(!selFiles.length)return;
-    mStep=2;setStepInd(2);
-    document.getElementById('modal-step-1').style.display='none';
-    document.getElementById('modal-step-2').style.display='';
-    document.getElementById('modalProcessBtn').disabled=true;
-    document.getElementById('modalProcessBtn').textContent='⏳ Processing…';
-    const rowsEl=document.getElementById('bulkQueueRows');
-    rowsEl.innerHTML=selFiles.map((f,i)=>`<div class="brow" id="brow-${i}"><div class="bri">⏳</div><div><div class="brn">${f.name}</div></div><div class="brf">—</div><div class="brs">Queued</div></div>`).join('');
-    const res=[];
-    for(let i=0;i<selFiles.length;i++){
-      document.getElementById('bpoBar').style.width=Math.round((i/selFiles.length)*100)+'%';
-      document.getElementById('bpoCount').textContent=`${i}/${selFiles.length}`;
-      document.getElementById('bpoLabel').textContent=`Processing ticket ${i+1} of ${selFiles.length}…`;
-      res.push(await procOne(selFiles[i],`brow-${i}`));
-    }
-    document.getElementById('bpoBar').style.width='100%';
-    document.getElementById('bpoCount').textContent=`${selFiles.length}/${selFiles.length}`;
-    document.getElementById('bpoLabel').textContent='✅ All tickets processed!';
-    await sleep(400);
-    mStep=3;setStepInd(3);
-    document.getElementById('modal-step-2').style.display='none';
-    document.getElementById('modal-step-3').style.display='';
-    document.getElementById('doneOk').textContent=res.filter(r=>r.status==='ok').length;
-    document.getElementById('doneRev').textContent=res.filter(r=>r.status==='review').length;
-    document.getElementById('doneErr').textContent=res.filter(r=>r.status==='error').length;
-    const sm={ok:['done-ok','✅','ok','✅ Saved'],review:['done-flag','⚠️','flag','⚠️ Needs Review'],error:['done-err','❌','err','❌ Failed']};
-    document.getElementById('bulkDoneRows').innerHTML=res.map(r=>{const[rc,ic,sc,st]=sm[r.status];return`<div class="brow ${rc}"><div class="bri">${ic}</div><div><div class="brn">${r.file}</div></div><div class="brf">${r.ticket?(r.ticket.asset+' · '+r.ticket.driver):'—'}</div><div class="brs ${sc}">${st}</div></div>`;}).join('');
-    document.getElementById('modalProcessBtn').disabled=false;
-    document.getElementById('modalProcessBtn').textContent='✓ Done';
-    document.getElementById('modalCancelBtn').textContent='Close';
-    document.getElementById('footerNote').textContent=`${res.filter(r=>r.status==='ok').length} saved · ${res.filter(r=>r.status==='review').length} need review`;
-  }else if(mStep===3){closeUpload();}
-}
-
-
-// ─── SETTINGS / API KEYS ───────────────────────────────────────────────────────
-const GEOFORCE_ENVS = {
-  dev:  { readings: 'https://readings.dev.geoforce.net/readings', asset: 'https://app.dev.geoforce.net/api' },
-  prod: { readings: 'https://readings.geoforce.com/readings',     asset: 'https://app.geoforce.com/api' }
-};
-
-function getKeys(){
-  return {
-    proxyUrl: localStorage.getItem('gf_proxy_url') || '',
-    env:      localStorage.getItem('gf_env')       || 'dev',
-    savedAt:  localStorage.getItem('gf_saved_at')  || ''
-  };
-}
-
-function openSettings(){
-  const k = getKeys();
-  document.getElementById('proxyUrlInput').value     = k.proxyUrl;
-  document.getElementById('proxyUrlInput').className = 'sm-input' + (k.proxyUrl ? ' has-key' : '');
-  setEnv(k.env, false);
-  updateKeyStatus('proxy', k.proxyUrl);
-  document.getElementById('settingsModal').classList.add('open');
-}
-
-function closeSettings(){ document.getElementById('settingsModal').classList.remove('open'); }
-
-function setEnv(env, save=true){
-  document.getElementById('envDev').classList.toggle('active',  env==='dev');
-  document.getElementById('envProd').classList.toggle('active', env==='prod');
-  if(save) localStorage.setItem('gf_env', env);
-}
-
-function toggleVis(inputId, btn){
-  const el = document.getElementById(inputId);
-  el.type = el.type === 'password' ? 'text' : 'password';
-  btn.textContent = el.type === 'password' ? '👁' : '🙈';
-}
-
-function onKeyInput(type){
-  const inputMap = { readings:'readingsKeyInput', asset:'assetKeyInput', secret:'assetSecretInput', proxy:'proxyUrlInput' };
-  const el = document.getElementById(inputMap[type]);
-  if(!el) return;
-  updateKeyStatus(type, el.value);
-  el.className = 'sm-input' + (el.value ? ' has-key-warn' : '');
-}
-
-function updateKeyStatus(type, val){
-  const statusMap = { readings:'readingsKeyStatus', asset:'assetKeyStatus', secret:'assetSecretStatus', proxy:'proxyUrlStatus' };
-  const el = document.getElementById(statusMap[type]);
-  if(!el) return;
-  if(type === 'proxy'){
-    if(!val){ el.className='sm-status empty'; el.textContent='⬤ No proxy URL saved'; }
-    else if(!val.startsWith('https://')){ el.className='sm-status warn'; el.textContent='⚠️ URL should start with https://'; }
-    else { el.className='sm-status ok'; el.textContent=`✅ Proxy URL saved`; }
-  } else if(type === 'secret'){
-    if(!val){ el.className='sm-status empty'; el.textContent='⬤ No secret saved'; }
-    else { el.className='sm-status ok'; el.textContent=`✅ Secret saved (${val.length} chars)`; }
-  } else {
-    if(!val){ el.className='sm-status empty'; el.textContent='⬤ No key saved'; }
-    else if(val.length < 20){ el.className='sm-status warn'; el.textContent='⚠️ Looks too short — double check'; }
-    else { el.className='sm-status ok'; el.textContent=`✅ Saved (${val.length} chars)`; }
-  }
-}
-
-function saveKeys(){
-  const pu = document.getElementById('proxyUrlInput').value.trim();
-  if(pu) localStorage.setItem('gf_proxy_url', pu);
-  localStorage.setItem('gf_saved_at', Date.now().toString());
-  updateTopbarIndicator();
-  closeSettings();
-}
-
-function clearKeys(){
-  if(!confirm('Clear saved proxy URL?')) return;
-  ['gf_proxy_url','gf_env','gf_saved_at'].forEach(k=>localStorage.removeItem(k));
-  const el=document.getElementById('proxyUrlInput');
-  if(el){el.value='';el.className='sm-input';}
-  updateKeyStatus('proxy','');
-  updateTopbarIndicator();
-}
-
-function updateTopbarIndicator(){
-  const k = getKeys();
-  const btn = document.getElementById('settingsBtn');
-  if(k.proxyUrl){
-    btn.innerHTML = '<span style="color:var(--success)">✅</span> API Connected';
-    btn.title = 'Proxy URL configured — ' + k.proxyUrl;
-  } else {
-    btn.innerHTML = '⚙️ Connect API';
-    btn.title = 'No proxy URL configured — click to set up';
-  }
-}
-
-
-
-// ─── MANUAL VERIFY ─────────────────────────────────────────────────────────────
-
-function openManualVerify(){
-  // Reset form
-  document.getElementById('mvAssetId').value = '';
-  document.getElementById('mvDriver').value  = '';
-  document.getElementById('mvDate').value    = new Date().toISOString().slice(0,10);
-  document.getElementById('mvStart').value   = '07:00';
-  document.getElementById('mvEnd').value     = '17:00';
-  document.getElementById('mvReportedHrs').value = '';
-  document.getElementById('mvInvoice').value = '';
-  document.getElementById('mvStatus').style.display = 'none';
-  document.getElementById('mvForm').style.opacity = '1';
-  document.getElementById('mvRunBtn').disabled = false;
-  document.getElementById('mvRunBtn').textContent = '🔍 Verify Job';
-  document.getElementById('mvCancelBtn').textContent = 'Cancel';
-  ['mvAssetId','mvDate','mvStart','mvEnd'].forEach(id => {
-    document.getElementById(id).classList.remove('error');
-  });
-
-  // Check proxy is configured
-  const k = getKeys();
-  document.getElementById('mvNoProxy').style.display = k.proxyUrl ? 'none' : 'flex';
-  document.getElementById('mvRunBtn').disabled = !k.proxyUrl;
-
-  document.getElementById('manualVerifyModal').classList.add('open');
-}
-
-function closeManualVerify(){
-  document.getElementById('manualVerifyModal').classList.remove('open');
-}
-
-function mvSetStep(n, icon, status, cls){
-  document.getElementById(`mvIcon${n}`).textContent = icon;
-  document.getElementById(`mvSt${n}`).textContent   = status;
-  document.getElementById(`mvSt${n}`).className     = `mv-step-status ${cls}`;
-}
-
-// Convert local CDT time + date to UTC ISO string
-// CDT = UTC-5 (daylight saving), CST = UTC-6
-function toUTC(dateStr, timeStr){
-  const [h, m] = timeStr.split(':').map(Number);
-  const d = new Date(dateStr + 'T00:00:00');
-  d.setHours(h + 5, m, 0, 0); // CDT offset
-  return d.toISOString();
-}
-
-// Analyse raw readings array and return structured job data
-function analyseReadings(readings, job){
-  if (!readings || readings.length === 0) return job;
-
-  // Sort by timestamp
-  const pts = readings
-    .map(r => ({
-      lat: r.position?.coordinates?.[1] ?? r.latitude,
-      lng: r.position?.coordinates?.[0] ?? r.longitude,
-      ts:  new Date(r.timestamp || r.received).getTime(),
-      speed: parseFloat(r.status?.speed || 0),
-      stopped: r.status?.stopped === 'true' || r.status?.stopped === true
-    }))
-    .filter(p => p.lat && p.lng)
-    .sort((a,b) => a.ts - b.ts);
-
-  if (pts.length < 2) return job;
-
-  const first = pts[0];
-  const last  = pts[pts.length - 1];
-
-  // Build outbound/return route (use all points for now)
-  job.outbound  = pts.map(p => [p.lat, p.lng]);
-  job.returning = [];
-
-  // Actual GPS hours (first to last reading)
-  const totalMs  = last.ts - first.ts;
-  const totalHrs = Math.round((totalMs / 3600000) * 10) / 10;
-  job.gpsHrs = totalHrs + 'h';
-
-  // Arrival / departure from GPS
-  job.arrGPS = new Date(first.ts).toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'});
-  job.depGPS = new Date(last.ts).toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'});
-
-  // Detect stops — groups of consecutive stopped readings > 15 min
-  const STOP_THRESHOLD_MS = 15 * 60 * 1000;
-  const stops = [];
-  let stopStart = null;
-  let stopLat = null, stopLng = null;
-
-  for (let i = 0; i < pts.length; i++){
-    const p = pts[i];
-    if (p.stopped || p.speed < 2){
-      if (!stopStart){ stopStart = p.ts; stopLat = p.lat; stopLng = p.lng; }
-    } else {
-      if (stopStart){
-        const dur = p.ts - stopStart;
-        if (dur > STOP_THRESHOLD_MS){
-          stops.push({ coords:[stopLat, stopLng], durationMs: dur,
-            arrival: new Date(stopStart).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'}),
-            departure: new Date(p.ts).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'}),
-            durationStr: Math.round(dur/60000) + ' min'
-          });
-        }
-        stopStart = null;
-      }
-    }
-  }
-
-  job.stopLocations = stops.map(s => ({ coords: s.coords, label: 'Detected Stop' }));
-  job.gpsMetrics = {
-    distance: '—',
-    driveTime: '—',
-    timeOnSite: totalHrs + 'h',
-    stops: stops.length
-  };
-
-  // Build timeline
-  job.timeline = [
-    { type:'yard', label:'Home Yard', address:'Midland, TX',
-      arrival: job.arrGPS, departure: job.arrGPS, duration:'—', flagged:false },
-    ...stops.map(s => ({
-      type:'stop', label:'Detected Stop', address:'—',
-      arrival: s.arrival, departure: s.departure, duration: s.durationStr, flagged: true
-    })),
-    { type:'site', label: job.jobSite?.name || 'Job Site', address:'—',
-      arrival: job.arrGPS, departure: job.depGPS,
-      duration: totalHrs + 'h', flagged: false },
-    { type:'yard', label:'Home Yard', address:'Midland, TX',
-      arrival: job.depGPS, departure:'—', duration:'—', flagged:false }
-  ];
-
-  // Compare vs reported and flag discrepancies
-  const repHrs = parseFloat(job.reportedHrs);
-  if (!isNaN(repHrs)){
-    const diff = Math.round((totalHrs - repHrs) * 10) / 10;
-    job.diff = diff;
-    if (Math.abs(diff) >= 0.5){
-      job.flags.push({
-        severity: Math.abs(diff) >= 1 ? 'critical' : 'medium',
-        type: 'Billing Mismatch',
-        title: `Hours discrepancy: ${diff > 0 ? '+' : ''}${diff}h`,
-        desc: `Reported ${repHrs}h but GPS confirms ${totalHrs}h. Difference of ${Math.abs(diff)}h.`
-      });
-    }
-  }
-
-  if (stops.length > 0){
-    job.flags.push({
-      severity: 'medium',
-      type: 'Unauthorized Stop',
-      title: `${stops.length} stop${stops.length > 1 ? 's' : ''} detected`,
-      desc: stops.map(s => `Stop of ${s.durationStr} at ${s.arrival}`).join('; ')
-    });
-  }
-
-  job.status   = job.flags.length > 0 ? 'flagged' : 'verified';
-  job.summary  = job.flags.length > 0
-    ? `GPS analysis found ${job.flags.length} issue${job.flags.length>1?'s':''}. Review before approving invoice.`
-    : `GPS data matches reported hours. No unauthorized stops detected. Ready for invoicing.`;
-
-  return job;
-}
-
-async function runManualVerify(){
-  const k = getKeys();
-  if (!k.proxyUrl) return;
-
-  const assetId    = document.getElementById('mvAssetId').value.trim();
-  const driver     = document.getElementById('mvDriver').value.trim();
-  const date       = document.getElementById('mvDate').value;
-  const startTime  = document.getElementById('mvStart').value;
-  const endTime    = document.getElementById('mvEnd').value;
-  const repHrs     = document.getElementById('mvReportedHrs').value.trim();
-  const invoice    = document.getElementById('mvInvoice').value.trim();
-
-  // Validate
-  let valid = true;
-  if (!assetId){ document.getElementById('mvAssetId').classList.add('error'); valid = false; }
-  else document.getElementById('mvAssetId').classList.remove('error');
-  if (!date){ document.getElementById('mvDate').classList.add('error'); valid = false; }
-  else document.getElementById('mvDate').classList.remove('error');
-  if (!valid) return;
-
-  // Lock UI, show status
-  document.getElementById('mvRunBtn').disabled = true;
-  document.getElementById('mvRunBtn').textContent = '⏳ Working…';
-  document.getElementById('mvForm').style.opacity = '0.4';
-  document.getElementById('mvStatus').style.display = 'block';
-  mvSetStep(1,'🔍','Looking up…','running');
-  mvSetStep(2,'⏳','Waiting','pending');
-  mvSetStep(3,'⏳','Waiting','pending');
-
-  const proxy = k.proxyUrl.replace(/\/$/, '');
-
-  // ── STEP 1: Asset lookup ──────────────────────────────────────────────────
-  let esn = null;
-  let assetName = assetId;
-  try {
-    const r = await fetch(`${proxy}/api?route=asset&id=${encodeURIComponent(assetId)}`);
-    const d = await r.json();
-    if (d.found && d.esn){
-      esn = d.esn;
-      assetName = d.name || assetId;
-      mvSetStep(1,'✅',`ESN: ${esn}`,'done');
-    } else {
-      // Asset not found — use asset ID as ESN fallback and warn
-      mvSetStep(1,'⚠️','Asset not found — using ID as ESN','done');
-      esn = assetId.replace(/\D/g,''); // strip non-digits as a last resort
-    }
-  } catch(e){
-    mvSetStep(1,'❌','Asset lookup failed','error');
-    document.getElementById('mvRunBtn').disabled = false;
-    document.getElementById('mvRunBtn').textContent = '🔍 Retry';
-    document.getElementById('mvForm').style.opacity = '1';
-    return;
-  }
-
-  // ── STEP 2: Readings ──────────────────────────────────────────────────────
-  mvSetStep(2,'📡','Pulling GPS data…','running');
-  let readings = [];
-  try {
-    const fromUTC = toUTC(date, startTime);
-    const toUTC_  = toUTC(date, endTime);
-    const url = `${proxy}/api?route=readings&esn=${encodeURIComponent(esn)}&from=${encodeURIComponent(fromUTC)}&to=${encodeURIComponent(toUTC_)}&time_series=received`;
-    const r = await fetch(url);
-    const d = await r.json();
-    readings = d.readings || [];
-    mvSetStep(2,'✅',`${readings.length} readings pulled`,'done');
-  } catch(e){
-    mvSetStep(2,'❌','Readings API failed','error');
-    document.getElementById('mvRunBtn').disabled = false;
-    document.getElementById('mvRunBtn').textContent = '🔍 Retry';
-    document.getElementById('mvForm').style.opacity = '1';
-    return;
-  }
-
-  // ── STEP 3: Analyse ───────────────────────────────────────────────────────
-  mvSetStep(3,'⚙️','Analysing…','running');
-  await new Promise(r => setTimeout(r, 400));
-
-  try {
-    const dateLabel = new Date(date + 'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
-    let job = {
-      id: `JB-${date.replace(/-/g,'')}-${assetId.replace(/[^A-Za-z0-9]/g,'')}`,
-      assetId,
-      driver: driver || 'Unassigned',
-      asset:  assetName,
-      esn,
-      date:   dateLabel,
-      status: 'processing',
-      // Old format fields renderRow expects
-      reportedHours: repHrs ? repHrs + 'h' : '—',
-      invoiceAmount: invoice ? '$' + parseFloat(invoice).toLocaleString() : '—',
-      jobSite: 'Job Site TBD',
-      aiSummary: '',
-      issues: [],
-      // New format fields for detail view
-      reportedHrs: repHrs ? repHrs + 'h' : '—',
-      gpsHrs: '—',
-      invoice: invoice ? '$' + parseFloat(invoice).toLocaleString() : '—',
-      arrReported: startTime,
-      arrGPS: '—',
-      depReported: endTime,
-      depGPS: '—',
-      flags: [],
-      timeline: [],
-      gpsMetrics: { distance:'—', driveTime:'—', timeOnSite:'—', stops: 0 },
-      jobSiteObj: { name: 'Job Site', coords: [31.9973,-102.0779] },
-      outbound: [], returning: [], stopLocations: []
-    };
-
-    if (readings.length === 0){
-      job.status = 'flagged';
-      job.issues.push({ severity:'medium', type:'No GPS Data',
-        desc:'No readings found for this time window. Check ESN and time range.' });
-      job.aiSummary = 'No GPS readings found. Check ESN and time range.';
-    } else {
-      job = analyseReadings(readings, job);
-      // Sync issues from flags for renderRow
-      job.issues = (job.flags||[]).map(f => ({ type: f.type, severity: f.severity==='critical'?'high':'medium', desc: f.desc }));
-      job.aiSummary = job.summary || '';
-      job.jobSite = job.jobSiteObj?.name || 'Job Site';
-      job.reportedHours = job.reportedHrs;
-      job.invoiceAmount = job.invoice;
-    }
-
-    TICKETS.unshift(job);
-    renderList();
-    mvSetStep(3,'✅',`Done — ${readings.length} readings analysed`,'done');
-    await new Promise(r => setTimeout(r, 800));
-    closeManualVerify();
-    showDetail(job.id);
-
-  } catch(e) {
-    console.error('Analysis error:', e);
-    mvSetStep(3,'❌','Analysis failed: ' + e.message,'error');
-    document.getElementById('mvRunBtn').disabled = false;
-    document.getElementById('mvRunBtn').textContent = '🔍 Retry';
-    document.getElementById('mvForm').style.opacity = '1';
-  }
-}
-
-// ─── INIT ──────────────────────────────────────────────────────────────────────
-updateTopbarIndicator();
-renderList();
-</script>
-
-
-<!-- MANUAL VERIFY MODAL -->
-<div class="modal-overlay" id="manualVerifyModal">
-  <div class="mv-modal">
-    <div class="mv-header">
-      <div class="mv-title">🔍 Manual Job Verification</div>
-      <button class="mclose" onclick="closeManualVerify()">✕</button>
-    </div>
-    <div class="mv-body">
-
-      <div class="mv-no-proxy" id="mvNoProxy" style="display:none">
-        ⚠️ No proxy URL configured. Click <strong>⚙️ API Keys</strong> in the toolbar and enter your Vercel proxy URL first.
-      </div>
-
-      <div class="mv-grid" id="mvForm">
-        <div class="mv-field full">
-          <div class="mv-label">Asset ID</div>
-          <input class="mv-input" id="mvAssetId" placeholder="e.g. UNIT-14 or 452" type="text">
-        </div>
-        <div class="mv-field full">
-          <div class="mv-label">Driver Name <span style="font-weight:400;color:var(--text-dim)">(optional)</span></div>
-          <input class="mv-input" id="mvDriver" placeholder="e.g. Carlos Reyes" type="text">
-        </div>
-        <div class="mv-field full">
-          <div class="mv-label">Date</div>
-          <input class="mv-input" id="mvDate" type="date">
-        </div>
-        <div class="mv-field">
-          <div class="mv-label">Start Time (CDT)</div>
-          <input class="mv-input" id="mvStart" type="time" value="07:00">
-        </div>
-        <div class="mv-field">
-          <div class="mv-label">End Time (CDT)</div>
-          <input class="mv-input" id="mvEnd" type="time" value="17:00">
-        </div>
-        <div class="mv-field full">
-          <div class="mv-label">Reported Hours <span style="font-weight:400;color:var(--text-dim)">(from ticket)</span></div>
-          <input class="mv-input" id="mvReportedHrs" placeholder="e.g. 8" type="number" step="0.25" min="0" max="24">
-        </div>
-        <div class="mv-field full">
-          <div class="mv-label">Invoice Amount <span style="font-weight:400;color:var(--text-dim)">(optional)</span></div>
-          <input class="mv-input" id="mvInvoice" placeholder="e.g. 1400" type="number" min="0">
-        </div>
-      </div>
-
-      <div class="mv-status" id="mvStatus">
-        <div class="mv-status-step">
-          <div class="mv-step-icon" id="mvIcon1">⏳</div>
-          <div class="mv-step-label">Looking up Asset ID → ESN</div>
-          <div class="mv-step-status pending" id="mvSt1">Waiting</div>
-        </div>
-        <div class="mv-status-step">
-          <div class="mv-step-icon" id="mvIcon2">⏳</div>
-          <div class="mv-step-label">Pulling GPS readings from Geoforce</div>
-          <div class="mv-step-status pending" id="mvSt2">Waiting</div>
-        </div>
-        <div class="mv-status-step">
-          <div class="mv-step-icon" id="mvIcon3">⏳</div>
-          <div class="mv-step-label">Analyzing route and time on site</div>
-          <div class="mv-step-status pending" id="mvSt3">Waiting</div>
-        </div>
-      </div>
-
-    </div>
-    <div class="mv-footer">
-      <button class="btn btn-outline" onclick="closeManualVerify()" id="mvCancelBtn">Cancel</button>
-      <button class="btn btn-primary" onclick="runManualVerify()" id="mvRunBtn">🔍 Verify Job</button>
+    <div class="modal-footer">
+      <div class="footer-note" id="up-note">Select ticket images to begin</div>
+      <button class="btn" id="up-cancel" onclick="closeUpload()">Cancel</button>
+      <button class="btn btn-primary" id="up-next" onclick="upNext()" disabled>📤 Process Tickets</button>
     </div>
   </div>
 </div>
 
 <!-- SETTINGS MODAL -->
-<div class="settings-overlay" id="settingsModal">
-  <div class="settings-modal">
-    <div class="sm-header">
-      <div class="sm-title">⚙️ Geoforce API Keys</div>
-      <button class="sm-close" onclick="closeSettings()">✕</button>
-    </div>
-    <div class="sm-body">
-
+<div class="overlay" id="settingsModal">
+  <div class="modal" style="width:460px;">
+    <div class="modal-hdr"><div class="modal-title">⚙️ API Configuration</div><button class="modal-close" onclick="closeSettings()">✕</button></div>
+    <div class="modal-body">
       <div class="sm-section">
         <div class="sm-section-title">🌍 Proxy URL</div>
-        <div class="sm-section-desc">Your Vercel proxy URL. The app sends all Geoforce requests here — your API tokens stay securely in Vercel, never in the browser.</div>
-        <div class="sm-field">
-          <div class="sm-label"><span>Vercel URL</span></div>
-          <div class="sm-input-wrap">
-            <input class="sm-input" id="proxyUrlInput" type="text" placeholder="https://geoforce-verification-proxy.vercel.app" oninput="onKeyInput('proxy')" style="font-family:var(--mono);font-size:11px;">
-          </div>
-          <div class="sm-status empty" id="proxyUrlStatus">⬤ No proxy URL saved</div>
-        </div>
+        <div class="sm-section-desc">Your Vercel proxy URL. API tokens are stored securely in Vercel — only this URL is saved in your browser.</div>
+        <input class="form-input" id="sm-proxy" type="text" placeholder="https://geoforce-verification-proxy.vercel.app" style="font-family:var(--mono);font-size:11px;margin-top:4px;">
+        <div class="sm-status empty" id="sm-proxy-status">⬤ No proxy URL saved</div>
       </div>
-
-      <hr class="sm-divider">
-
       <div class="sm-section">
         <div class="sm-section-title">🌐 Environment</div>
         <div class="sm-section-desc">Which Geoforce environment should the proxy use?</div>
         <div class="sm-env-toggle">
-          <button class="sm-env-btn active" id="envDev" onclick="setEnv('dev')">Dev</button>
-          <button class="sm-env-btn" id="envProd" onclick="setEnv('prod')">Prod</button>
+          <button class="sm-env-btn active" id="sm-env-dev" onclick="setEnv('dev')">Dev</button>
+          <button class="sm-env-btn" id="sm-env-prod" onclick="setEnv('prod')">Prod</button>
         </div>
       </div>
-
     </div>
-    <div class="sm-footer">
-      <div class="sm-footer-note">🔒 Your API tokens are stored securely in Vercel.<br>Only the proxy URL is saved in your browser.</div>
-      <div style="display:flex;gap:8px;">
-        <button class="btn btn-outline" onclick="clearKeys()">Clear All</button>
-        <button class="btn btn-primary" onclick="saveKeys()">Save Keys</button>
-      </div>
+    <div class="modal-footer">
+      <div class="sm-footer-note">🔒 Tokens stored securely in Vercel — never in the browser.</div>
+      <button class="btn" onclick="clearProxy()">Clear</button>
+      <button class="btn btn-primary" onclick="saveProxy()">Save</button>
     </div>
   </div>
 </div>
+
+<script>
+// ── UNIFIED DATA MODEL ────────────────────────────────────────────────────────
+// Every job uses this exact structure — no exceptions.
+// Mock data and real API data both produce this shape.
+//
+// {
+//   id, assetId, driver, asset, esn, date, status,
+//   reportedHrs, gpsHrs, invoice,
+//   arrReported, arrGPS, depReported, depGPS,
+//   summary,
+//   flags: [{severity:'critical'|'medium', type, title, desc}],
+//   timeline: [{type:'yard'|'site'|'stop', label, address, arrival, departure, duration, flagged}],
+//   gpsMetrics: {distance, driveTime, timeOnSite, stops},
+//   jobSite: {name, coords:[lat,lng]},
+//   outbound:[[lat,lng],...], returning:[[lat,lng],...], stopLocations:[{coords,label}]
+// }
+
+const HOME_YARD = {name:'Home Yard — Midland, TX', coords:[31.9973,-102.0779]};
+
+const JOBS = [
+  {id:'JB-2026-0893',assetId:'UNIT-22',driver:'Mike Torres',asset:'Unit 22 — Ford F-350',esn:'204206516',date:'Mar 30, 2026',status:'flagged',reportedHrs:'9h',gpsHrs:'6.5h',invoice:'$1,350',arrReported:'10:30',arrGPS:'10:30',depReported:'02:00 PM',depGPS:'02:00 PM',summary:'Driver took a suboptimal route adding ~26 min. Spent 42 min at Midland Hardware Supply during work hours. Actual billable time is 2.5h less than reported.',flags:[{severity:'critical',type:'Billing Mismatch',title:'Reported hours exceed GPS data',desc:'Driver reported 9h but GPS confirms 6.5h on site. Recommend adjusting invoice downward.'},{severity:'medium',type:'Unauthorized Stop',title:'Extended non-jobsite stop',desc:'42 min stop at Midland Hardware Supply at 08:30 AM during work hours (non-billable).'},{severity:'medium',type:'Route Inefficiency',title:'Suboptimal route detected',desc:'Vehicle traveled 14 mi east before heading northwest — added ~26 min vs direct route.'}],timeline:[{type:'yard',label:'Home Yard',address:'Midland, TX',arrival:'07:00 AM',departure:'07:00 AM',duration:'—',flagged:false},{type:'stop',label:'Midland Hardware Supply',address:'Midland, TX',arrival:'08:30 AM',departure:'09:12 AM',duration:'0h 42m',flagged:true},{type:'site',label:'Andrews County Well #89',address:'Andrews, TX',arrival:'10:30 AM',departure:'02:00 PM',duration:'3h 30m',flagged:false},{type:'yard',label:'Home Yard',address:'Midland, TX',arrival:'04:30 PM',departure:'—',duration:'—',flagged:false}],gpsMetrics:{distance:'142.6 mi',driveTime:'3h 08m',timeOnSite:'3h 30m',stops:1},jobSite:{name:'Andrews County Well #89 — Andrews, TX',coords:[32.3182,-102.5477]},stopLocations:[{coords:[32.0200,-101.9800],label:'Midland Hardware Supply'}],outbound:[[31.9973,-102.0779],[32.0200,-102.0300],[32.0450,-101.9800],[32.0200,-101.9800],[32.0600,-102.0800],[32.1000,-102.1600],[32.1500,-102.2700],[32.2000,-102.3700],[32.2600,-102.4600],[32.3182,-102.5477]],returning:[[32.3182,-102.5477],[32.2500,-102.4400],[32.1800,-102.3200],[32.1200,-102.2000],[32.0500,-102.1000],[31.9973,-102.0779]]},
+  {id:'JB-2026-0892',assetId:'UNIT-07',driver:'James Holloway',asset:'Unit 07 — Chevy Silverado 3500',esn:'204206515',date:'Mar 30, 2026',status:'flagged',reportedHrs:'8h',gpsHrs:'6.75h',invoice:'$1,190',arrReported:'09:15',arrGPS:'09:15',depReported:'04:00 PM',depGPS:'04:00 PM',summary:'Extended 48 min stop at FM-1788 Fuel & Diner during work hours. Actual on-site time is 1.25h less than reported.',flags:[{severity:'medium',type:'Unauthorized Stop',title:'Extended non-jobsite stop',desc:'48 min stop at FM-1788 Fuel & Diner at 07:10 AM — over 30 min threshold.'},{severity:'medium',type:'Billing Mismatch',title:'Minor hours discrepancy',desc:'Reported 8h but GPS shows 6.75h on site.'}],timeline:[{type:'yard',label:'Home Yard',address:'Midland, TX',arrival:'06:45 AM',departure:'06:45 AM',duration:'—',flagged:false},{type:'stop',label:'FM-1788 Fuel & Diner',address:'FM-1788, Midland County',arrival:'07:10 AM',departure:'07:58 AM',duration:'0h 48m',flagged:true},{type:'site',label:'Permian Basin Well #218',address:'Gardendale, TX',arrival:'09:15 AM',departure:'04:00 PM',duration:'6h 45m',flagged:false},{type:'yard',label:'Home Yard',address:'Midland, TX',arrival:'05:45 PM',departure:'—',duration:'—',flagged:false}],gpsMetrics:{distance:'68.2 mi',driveTime:'1h 51m',timeOnSite:'6h 45m',stops:1},jobSite:{name:'Permian Basin Well #218 — Gardendale, TX',coords:[31.8667,-102.3167]},stopLocations:[{coords:[31.9600,-102.1600],label:'FM-1788 Fuel & Diner'}],outbound:[[31.9973,-102.0779],[31.9800,-102.1100],[31.9600,-102.1600],[31.9400,-102.2000],[31.9200,-102.2500],[31.9000,-102.2900],[31.8800,-102.3000],[31.8667,-102.3167]],returning:[[31.8667,-102.3167],[31.8800,-102.3000],[31.9100,-102.2500],[31.9400,-102.2000],[31.9650,-102.1600],[31.9800,-102.1200],[31.9973,-102.0779]]},
+  {id:'JB-2026-0891',assetId:'UNIT-14',driver:'Carlos Reyes',asset:'Unit 14 — Ford F-450',esn:'204206514',date:'Mar 30, 2026',status:'verified',reportedHrs:'5h',gpsHrs:'4.9h',invoice:'$875',arrReported:'08:22',arrGPS:'08:22',depReported:'01:15 PM',depGPS:'01:15 PM',summary:'Perfect match. No unauthorized stops. GPS hours closely match reported hours. Ready for invoicing.',flags:[],timeline:[{type:'yard',label:'Home Yard',address:'Midland, TX',arrival:'07:30 AM',departure:'07:30 AM',duration:'—',flagged:false},{type:'site',label:'Permian Basin Well #447',address:'Near Stanton, TX',arrival:'08:22 AM',departure:'01:15 PM',duration:'4h 53m',flagged:false},{type:'yard',label:'Home Yard',address:'Midland, TX',arrival:'02:10 PM',departure:'—',duration:'—',flagged:false}],gpsMetrics:{distance:'54.8 mi',driveTime:'1h 43m',timeOnSite:'4h 53m',stops:0},jobSite:{name:'Permian Basin Well #447 — Near Stanton, TX',coords:[32.1262,-101.7901]},stopLocations:[],outbound:[[31.9973,-102.0779],[32.0250,-102.0100],[32.0500,-101.9600],[32.0750,-101.9000],[32.1000,-101.8500],[32.1262,-101.7901]],returning:[[32.1262,-101.7901],[32.1000,-101.8500],[32.0500,-101.9600],[32.0100,-102.0400],[31.9973,-102.0779]]},
+  {id:'JB-2026-0890',assetId:'UNIT-03',driver:'Derek Nash',asset:'Unit 03 — Ford F-250',esn:'204206510',date:'Mar 30, 2026',status:'verified',reportedHrs:'5.5h',gpsHrs:'5.4h',invoice:'$963',arrReported:'07:05',arrGPS:'07:05',depReported:'12:30 PM',depGPS:'12:30 PM',summary:'Clean trip. GPS data matches ticket. No unauthorized stops. Approved for invoicing.',flags:[],timeline:[{type:'yard',label:'Home Yard',address:'Midland, TX',arrival:'06:00 AM',departure:'06:00 AM',duration:'—',flagged:false},{type:'site',label:'Spraberry Trend Well #301',address:'Near Big Spring, TX',arrival:'07:05 AM',departure:'12:30 PM',duration:'5h 25m',flagged:false},{type:'yard',label:'Home Yard',address:'Midland, TX',arrival:'01:45 PM',departure:'—',duration:'—',flagged:false}],gpsMetrics:{distance:'78.4 mi',driveTime:'2h 20m',timeOnSite:'5h 25m',stops:0},jobSite:{name:'Spraberry Trend Well #301 — Near Big Spring',coords:[32.2501,-101.4785]},stopLocations:[],outbound:[[31.9973,-102.0779],[32.0700,-101.8600],[32.1700,-101.6400],[32.2501,-101.4785]],returning:[[32.2501,-101.4785],[32.1500,-101.6700],[32.0600,-101.8900],[31.9973,-102.0779]]},
+  {id:'JB-2026-0889',assetId:'UNIT-09',driver:'Luis Vega',asset:'Unit 09 — Ram 3500',esn:'204206511',date:'Mar 30, 2026',status:'processing',reportedHrs:'—',gpsHrs:'—',invoice:'In Progress',arrReported:'10:50',arrGPS:'10:50',depReported:'—',depGPS:'—',summary:'Vehicle currently on site at Delaware Basin Well. GPS tracking active.',flags:[],timeline:[{type:'yard',label:'Home Yard',address:'Midland, TX',arrival:'09:30 AM',departure:'09:30 AM',duration:'—',flagged:false},{type:'site',label:'Delaware Basin Well #77',address:'Loving County, TX',arrival:'10:50 AM',departure:'Active',duration:'In Progress',flagged:false}],gpsMetrics:{distance:'156.8 mi',driveTime:'1h 20m',timeOnSite:'In Progress',stops:0},jobSite:{name:'Delaware Basin Well #77 — Loving County',coords:[31.7000,-103.5500]},stopLocations:[],outbound:[[31.9973,-102.0779],[31.9500,-102.2500],[31.9000,-102.5000],[31.8500,-102.7500],[31.8000,-103.0000],[31.7000,-103.5500]],returning:[]},
+  {id:'JB-2026-0888',assetId:'UNIT-18',driver:'Tony Burch',asset:'Unit 18 — Ford F-450',esn:'204206512',date:'Mar 30, 2026',status:'flagged',reportedHrs:'8h',gpsHrs:'5.3h',invoice:'$925',arrReported:'10:10',arrGPS:'10:10',depReported:'03:30 PM',depGPS:'03:30 PM',summary:'55 min stop at Odessa truck stop during work hours. Significant billing discrepancy of 2.7h.',flags:[{severity:'critical',type:'Billing Mismatch',title:'Significant hours discrepancy',desc:'Driver reported 8h but GPS confirms only 5.3h on site. -2.7h difference.'},{severity:'medium',type:'Unauthorized Stop',title:'Extended stop at truck stop',desc:'55 min stop at Odessa Truck Stop at 07:45 AM — non-billable.'}],timeline:[{type:'yard',label:'Home Yard',address:'Midland, TX',arrival:'07:00 AM',departure:'07:00 AM',duration:'—',flagged:false},{type:'stop',label:'Odessa Truck Stop',address:'Odessa, TX',arrival:'07:45 AM',departure:'08:40 AM',duration:'0h 55m',flagged:true},{type:'site',label:'Wolfcamp Well #134',address:'Near Odessa, TX',arrival:'10:10 AM',departure:'03:30 PM',duration:'5h 20m',flagged:false},{type:'yard',label:'Home Yard',address:'Midland, TX',arrival:'05:00 PM',departure:'—',duration:'—',flagged:false}],gpsMetrics:{distance:'62.4 mi',driveTime:'1h 24m',timeOnSite:'5h 20m',stops:1},jobSite:{name:'Wolfcamp Well #134 — Near Odessa',coords:[31.8457,-102.3676]},stopLocations:[{coords:[31.8500,-102.3500],label:'Odessa Truck Stop'}],outbound:[[31.9973,-102.0779],[31.9700,-102.1400],[31.9300,-102.2200],[31.8900,-102.2900],[31.8600,-102.3400],[31.8500,-102.3500],[31.8457,-102.3676]],returning:[[31.8457,-102.3676],[31.8700,-102.3200],[31.9000,-102.2700],[31.9300,-102.2000],[31.9700,-102.1300],[31.9973,-102.0779]]},
+  {id:'JB-2026-0887',assetId:'UNIT-05',driver:'Randy Ochoa',asset:'Unit 05 — Chevy Silverado 2500',esn:'204206513',date:'Mar 30, 2026',status:'verified',reportedHrs:'4.75h',gpsHrs:'4.75h',invoice:'$831',arrReported:'06:15',arrGPS:'06:15',depReported:'11:00 AM',depGPS:'11:00 AM',summary:'Perfect match. No discrepancies. Approved for invoicing.',flags:[],timeline:[{type:'yard',label:'Home Yard',address:'Midland, TX',arrival:'05:30 AM',departure:'05:30 AM',duration:'—',flagged:false},{type:'site',label:'Clearfork Well #55',address:'Near Midland, TX',arrival:'06:15 AM',departure:'11:00 AM',duration:'4h 45m',flagged:false},{type:'yard',label:'Home Yard',address:'Midland, TX',arrival:'11:50 AM',departure:'—',duration:'—',flagged:false}],gpsMetrics:{distance:'18.6 mi',driveTime:'0h 45m',timeOnSite:'4h 45m',stops:0},jobSite:{name:'Clearfork Well #55 — Near Midland',coords:[32.0800,-102.1200]},stopLocations:[],outbound:[[31.9973,-102.0779],[32.0200,-102.1000],[32.0500,-102.1100],[32.0800,-102.1200]],returning:[[32.0800,-102.1200],[32.0500,-102.1100],[32.0200,-102.0900],[31.9973,-102.0779]]}
+];
+
+// ── STATE ─────────────────────────────────────────────────────────────────────
+let activeFilter = 'all';
+let currentJobId = null;
+let detailMap = null;
+let mapLayers = [];
+let selectedIds = new Set();
+
+// ── SETTINGS ──────────────────────────────────────────────────────────────────
+function getSettings(){ return { proxyUrl: localStorage.getItem('gf_proxy_url')||'', env: localStorage.getItem('gf_env')||'dev' }; }
+function openSettings(){
+  const s = getSettings();
+  document.getElementById('sm-proxy').value = s.proxyUrl;
+  updateProxyStatus(s.proxyUrl);
+  setEnv(s.env, false);
+  document.getElementById('settingsModal').classList.add('open');
+}
+function closeSettings(){ document.getElementById('settingsModal').classList.remove('open'); }
+function setEnv(e, save=true){
+  document.getElementById('sm-env-dev').classList.toggle('active', e==='dev');
+  document.getElementById('sm-env-prod').classList.toggle('active', e==='prod');
+  if(save) localStorage.setItem('gf_env', e);
+}
+function saveProxy(){
+  const v = document.getElementById('sm-proxy').value.trim();
+  if(v) localStorage.setItem('gf_proxy_url', v);
+  updateSettingsBtn();
+  closeSettings();
+}
+function clearProxy(){
+  if(!confirm('Clear proxy URL?')) return;
+  localStorage.removeItem('gf_proxy_url');
+  document.getElementById('sm-proxy').value = '';
+  updateProxyStatus('');
+  updateSettingsBtn();
+}
+function updateProxyStatus(v){
+  const el = document.getElementById('sm-proxy-status');
+  if(!v){ el.className='sm-status empty'; el.textContent='⬤ No proxy URL saved'; }
+  else if(!v.startsWith('https://')){ el.className='sm-status warn'; el.textContent='⚠️ URL should start with https://'; }
+  else { el.className='sm-status ok'; el.textContent='✅ Proxy URL configured'; }
+}
+function updateSettingsBtn(){
+  const s = getSettings();
+  const btn = document.getElementById('settingsBtn');
+  btn.innerHTML = s.proxyUrl ? '✅ API Connected' : '⚙️ Connect API';
+  btn.style.color = s.proxyUrl ? 'var(--success)' : '';
+}
+
+// ── LIST RENDERING ────────────────────────────────────────────────────────────
+function renderStats(){
+  document.getElementById('st-total').textContent     = JOBS.length;
+  document.getElementById('st-verified').textContent  = JOBS.filter(j=>j.status==='verified').length;
+  document.getElementById('st-flagged').textContent   = JOBS.filter(j=>j.status==='flagged').length;
+  document.getElementById('st-processing').textContent= JOBS.filter(j=>j.status==='processing').length;
+}
+
+function setFilter(f, btn){
+  activeFilter = f;
+  document.querySelectorAll('.ftab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderList();
+}
+
+function renderList(){
+  renderStats();
+  const q = (document.getElementById('searchEl')?.value||'').toLowerCase();
+  let jobs = activeFilter==='all' ? JOBS : JOBS.filter(j=>j.status===activeFilter);
+  if(q) jobs = jobs.filter(j=>
+    j.id.toLowerCase().includes(q)||j.driver.toLowerCase().includes(q)||
+    j.assetId.toLowerCase().includes(q)||j.jobSite.name.toLowerCase().includes(q)
+  );
+
+  const sl={verified:'✅ Verified',flagged:'⚠️ Flagged',processing:'🔄 Processing',pending:'⏳ Pending'};
+  const sc={verified:'badge-verified',flagged:'badge-flagged',processing:'badge-processing',pending:'badge-pending'};
+  const ss={verified:'str-verified',flagged:'str-flagged',processing:'str-processing',pending:'str-pending'};
+
+  document.getElementById('ticketList').innerHTML = jobs.map(job => {
+    const isSel = selectedIds.has(job.id);
+    const tags = job.flags.slice(0,3).map(f=>`<span class="itag ${f.severity==='critical'?'high':''}">${f.type}</span>`).join('');
+    const more = job.flags.length>3 ? `<span class="itag">+${job.flags.length-3} more</span>` : '';
+    const issRow = job.flags.length>0 ? `<div class="tr-issues"><span class="issue-cnt">⚠️ ${job.flags.length} Issue${job.flags.length>1?'s':''} Detected</span>${tags}${more}</div>` : '';
+    const sumRow = job.summary ? `<div class="tr-summary">"${job.summary}"</div>` : '';
+    return `<div class="trow ${isSel?'selected':''}" id="row-${job.id}">
+      <div class="tr-check" onclick="event.stopPropagation()"><input type="checkbox" ${isSel?'checked':''} onchange="toggleSel('${job.id}',this)"></div>
+      <div class="tr-stripe ${ss[job.status]||'str-pending'}"></div>
+      <div class="tr-body" onclick="showDetail('${job.id}')">
+        <div class="tr-head"><span class="tr-id">${job.id}</span><span class="badge ${sc[job.status]||'badge-pending'}">${sl[job.status]||job.status}</span></div>
+        <div class="tr-meta">${job.driver} &bull; ${job.assetId} &bull; ${job.date}</div>
+        <div class="tr-details">
+          <div><div class="td-lbl">📍 Job Site</div><div class="td-val">${job.jobSite.name.split('—')[0].trim()}</div></div>
+          <div><div class="td-lbl">⏱ Reported Hours</div><div class="td-val">${job.reportedHrs}</div></div>
+          <div><div class="td-lbl">💰 Invoice</div><div class="td-val">${job.invoice}</div></div>
+        </div>
+        ${issRow}${sumRow}
+      </div>
+      <div class="tr-right">
+        <div><div class="tr-invoice">${job.invoice}</div><div class="tr-invoice-lbl">Invoice Amount</div></div>
+        <button class="btn-view" onclick="event.stopPropagation();showDetail('${job.id}')">View Details →</button>
+      </div>
+    </div>`;
+  }).join('') || `<div style="text-align:center;padding:40px;color:var(--text-dim);font-size:14px;">No tickets match your search.</div>`;
+
+  updateBulkButtons();
+}
+
+// ── SELECTION ─────────────────────────────────────────────────────────────────
+function toggleSel(id, el){
+  if(el.checked) selectedIds.add(id); else selectedIds.delete(id);
+  document.getElementById('row-'+id)?.classList.toggle('selected', el.checked);
+  document.getElementById('selAll').checked = selectedIds.size===JOBS.length;
+  document.getElementById('selAllLbl').textContent = selectedIds.size>0 ? `${selectedIds.size} selected` : 'Select all';
+  updateBulkButtons();
+}
+function toggleSelAll(el){
+  if(el.checked) JOBS.forEach(j=>selectedIds.add(j.id)); else selectedIds.clear();
+  document.getElementById('selAllLbl').textContent = el.checked ? `${selectedIds.size} selected` : 'Select all';
+  renderList();
+}
+function updateBulkButtons(){
+  const n = selectedIds.size;
+  const btn = document.getElementById('btnExport');
+  btn.disabled = n===0;
+  btn.textContent = n>0 ? `⬇ Export GPS (${n})` : '⬇ Export GPS';
+}
+
+function bulkExportGPS(){
+  const jobs = JOBS.filter(j=>selectedIds.has(j.id));
+  const rows = ['job_id,leg,lat,lng,point,driver,asset,esn'];
+  jobs.forEach(job=>{
+    (job.outbound||[]).forEach((pt,i)=>rows.push(`${job.id},outbound,${pt[0]},${pt[1]},${i+1},"${job.driver}","${job.asset}",${job.esn}`));
+    (job.returning||[]).forEach((pt,i)=>rows.push(`${job.id},return,${pt[0]},${pt[1]},${i+1},"${job.driver}","${job.asset}",${job.esn}`));
+  });
+  dlCSV(rows.join('\n'), `GPS_Bulk_${jobs.length}jobs.csv`);
+}
+function dlCSV(content, filename){
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content],{type:'text/csv'}));
+  a.download = filename; a.click();
+}
+
+// ── DETAIL VIEW ───────────────────────────────────────────────────────────────
+function showList(){
+  document.getElementById('page-list').style.display='block';
+  document.getElementById('page-detail').style.display='none';
+  renderList();
+}
+
+function showDetail(id){
+  currentJobId = id;
+  const job = JOBS.find(j=>j.id===id);
+  if(!job) return;
+  document.getElementById('page-list').style.display='none';
+  document.getElementById('page-detail').style.display='block';
+
+  document.getElementById('d-id').textContent = job.id;
+  const pill = document.getElementById('d-pill');
+  if(job.flags.length>0){ pill.style.display='flex'; pill.textContent=`⚠️ ${job.flags.length} Issue${job.flags.length>1?'s':''}`; }
+  else pill.style.display='none';
+
+  // Issues banner
+  const banner = document.getElementById('d-banner');
+  if(job.flags.length>0){
+    const crit = job.flags.filter(f=>f.severity==='critical').length;
+    const med  = job.flags.filter(f=>f.severity==='medium').length;
+    const diff = hDiff(job.reportedHrs, job.gpsHrs);
+    banner.style.display='block';
+    banner.innerHTML=`<div class="iss-banner">
+      <div class="ib-head">
+        <div class="ib-title">⚠️ Issues Detected — Review Required</div>
+        <div class="sev-pills">${crit>0?`<span class="sev-crit">${crit} Critical</span>`:''} ${med>0?`<span class="sev-med">${med} Medium</span>`:''}</div>
+      </div>
+      <div class="ib-stats">
+        <div class="ib-stat"><div class="ib-stat-icon">📍</div><div class="ib-stat-label">Location</div><div class="ib-stat-val ${job.flags.find(f=>f.type==='Route Inefficiency')?'val-warn':'val-ok'}">${job.flags.find(f=>f.type==='Route Inefficiency')?'Check Required':'Confirmed'}</div></div>
+        <div class="ib-stat"><div class="ib-stat-icon">⏱</div><div class="ib-stat-label">Time Accuracy</div><div class="ib-stat-val ${diff<0?'val-bad':'val-ok'}">${diff!==0?(diff>0?'+':'')+diff+'h':'+0h'}</div></div>
+        <div class="ib-stat"><div class="ib-stat-icon">🚫</div><div class="ib-stat-label">Extra Stops</div><div class="ib-stat-val ${(job.stopLocations||[]).length>0?'val-warn':'val-ok'}">${(job.stopLocations||[]).length}</div></div>
+        <div class="ib-stat"><div class="ib-stat-icon">💲</div><div class="ib-stat-label">Billing Impact</div><div class="ib-stat-val ${diff<0?'val-bad':'val-ok'}">${diff!==0?'$'+(Math.round(Math.abs(diff)*175)*-1).toLocaleString():'$0'}</div></div>
+      </div>
+      <div class="ib-summary">${job.summary}</div>
+      <div class="ib-actions">${job.flags.map(f=>`<div class="ib-action"><span>${f.severity==='critical'?'🔴':'🟡'}</span><span><strong>${f.title}.</strong> ${f.desc}</span></div>`).join('')}</div>
+    </div>`;
+  } else banner.style.display='none';
+
+  // Reported vs GPS
+  const diff = hDiff(job.reportedHrs, job.gpsHrs);
+  document.getElementById('d-rep').textContent = job.reportedHrs;
+  document.getElementById('d-gps').textContent = job.gpsHrs;
+  const dEl = document.getElementById('d-diff');
+  dEl.textContent = diff!==0 ? (diff>0?'+':'')+diff+'h' : '—';
+  dEl.className   = 'rgps-val'+(diff<0?' rgps-neg':diff>0?' rgps-pos':'');
+
+  // Job details
+  document.getElementById('d-site').textContent    = job.jobSite.name;
+  document.getElementById('d-driver').textContent  = job.driver;
+  document.getElementById('d-esn').textContent     = 'ESN: '+job.esn;
+  document.getElementById('d-assetid').textContent = job.assetId;
+  document.getElementById('d-asset').textContent   = job.asset;
+  document.getElementById('d-invoice').textContent = job.invoice;
+
+  // Time verify
+  const hasDiff = job.flags.some(f=>f.type==='Billing Mismatch');
+  document.getElementById('d-arr-rep').textContent = job.arrReported||'—';
+  document.getElementById('d-arr-gps').textContent = job.arrGPS||'—';
+  document.getElementById('d-arr-gps-box').className = 'tv-box '+(hasDiff?'tv-gps-bad':'tv-gps-ok');
+  document.getElementById('d-dep-rep').textContent = job.depReported||'—';
+  document.getElementById('d-dep-gps').textContent = job.depGPS||'—';
+  document.getElementById('d-dep-gps-box').className = 'tv-box '+(hasDiff?'tv-gps-bad':'tv-gps-ok');
+  document.getElementById('d-hrs-rep').textContent = job.reportedHrs;
+  document.getElementById('d-hrs-gps').textContent = job.gpsHrs;
+  document.getElementById('d-hrs-gps-box').className = 'tv-box '+(diff<0?'tv-gps-bad':'tv-gps-ok');
+  document.getElementById('d-hrs-badge').innerHTML = diff!==0 ? `<span style="color:var(--${diff<0?'danger':'success'});font-weight:700;">${diff>0?'+':''}${diff}h difference</span>` : '';
+  const barPct = job.reportedHrs!=='—'&&job.gpsHrs!=='—' ? Math.min(100,Math.round(parseFloat(job.gpsHrs)/parseFloat(job.reportedHrs)*100)) : 100;
+  document.getElementById('d-bar').style.width = barPct+'%';
+  const bw = document.getElementById('d-bill-warn');
+  if(diff<0){ bw.style.display='flex'; document.getElementById('d-bill-warn-txt').innerHTML=`Driver reported <strong>${Math.abs(diff)}h more</strong> than GPS data shows. Consider adjusting invoice downward.`; }
+  else bw.style.display='none';
+
+  // Timeline
+  document.getElementById('d-timeline').innerHTML = job.timeline.map(item=>{
+    const dc=item.type==='site'?'atl-dot-site':item.type==='stop'?'atl-dot-stop':'atl-dot-yard';
+    const ic=item.type==='site'?'📍':item.type==='stop'?'⚠️':'🏠';
+    return `<div class="atl-item"><div class="atl-dot ${dc}">${ic}</div><div class="atl-line"></div><div class="atl-body">
+      <div class="atl-head"><div class="atl-title">${item.label}</div>${item.flagged?'<span class="atl-flagged">⚠️ Flagged</span>':''}</div>
+      <div class="atl-addr">${item.address}</div>
+      <div class="atl-times">
+        <div><div class="atl-tl">Arrival</div><div class="atl-tv">${item.arrival}</div></div>
+        <div><div class="atl-tl">Departure</div><div class="atl-tv">${item.departure}</div></div>
+        <div><div class="atl-tl">Duration</div><div class="atl-dur">${item.duration}</div></div>
+      </div>
+    </div></div>`;
+  }).join('');
+
+  // GPS metrics
+  const m = job.gpsMetrics;
+  document.getElementById('d-metrics').innerHTML = `
+    <div><div class="gm-lbl">Total Distance</div><div class="gm-val">${m.distance}</div></div>
+    <div><div class="gm-lbl">Drive Time</div><div class="gm-val">${m.driveTime}</div></div>
+    <div><div class="gm-lbl">Time On-Site</div><div class="gm-val">${m.timeOnSite}</div></div>
+    <div><div class="gm-lbl">Stops Detected</div><div class="gm-val">${m.stops}</div></div>`;
+
+  // Issues list
+  const ic = document.getElementById('d-iss-card');
+  if(job.flags.length>0){
+    ic.style.display='block';
+    document.getElementById('d-iss-count').textContent = job.flags.length;
+    document.getElementById('d-iss-list').innerHTML = job.flags.map(f=>`
+      <div class="iss-item ${f.severity==='critical'?'iss-crit':'iss-med'}">
+        <div class="iss-icon">${f.severity==='critical'?'🔴':'🟡'}</div>
+        <div style="flex:1"><div class="iss-type">${f.type}</div><div class="iss-title">${f.title}</div><div class="iss-desc">${f.desc}</div></div>
+        <div class="iss-sev">${f.severity.charAt(0).toUpperCase()+f.severity.slice(1)}</div>
+      </div>`).join('');
+  } else ic.style.display='none';
+
+  setTimeout(()=>renderMap(job), 80);
+}
+
+function hDiff(rep, gps){
+  const r=parseFloat(rep), g=parseFloat(gps);
+  if(isNaN(r)||isNaN(g)) return 0;
+  return Math.round((g-r)*10)/10;
+}
+
+function renderMap(job){
+  if(!detailMap){
+    detailMap = L.map('detail-map',{zoomControl:true,attributionControl:false});
+    L.tileLayer('https://mt{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',{subdomains:['0','1','2','3'],maxZoom:20}).addTo(detailMap);
+  }
+  mapLayers.forEach(l=>detailMap.removeLayer(l)); mapLayers=[];
+  const mkIcon=type=>L.divIcon({className:'',iconSize:[28,28],iconAnchor:[14,14],
+    html:`<div style="width:28px;height:28px;border-radius:50%;background:${type==='yard'?'#0C6FE3':type==='site'?'#16a34a':'#dc2626'};border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;font-size:13px;">${type==='yard'?'🏠':type==='site'?'📍':'⚠️'}</div>`});
+
+  if(job.outbound?.length>1){
+    mapLayers.push(L.polyline(job.outbound,{color:'#fff',weight:7,opacity:.5}).addTo(detailMap));
+    mapLayers.push(L.polyline(job.outbound,{color:'#0C6FE3',weight:5}).addTo(detailMap).bindTooltip('➡ Outbound',{sticky:true}));
+  }
+  if(job.returning?.length>1){
+    mapLayers.push(L.polyline(job.returning,{color:'#fff',weight:7,opacity:.4}).addTo(detailMap));
+    mapLayers.push(L.polyline(job.returning,{color:'#f59e0b',weight:5,dashArray:'10 6'}).addTo(detailMap).bindTooltip('↩ Return',{sticky:true}));
+  }
+  mapLayers.push(L.marker(HOME_YARD.coords,{icon:mkIcon('yard')}).addTo(detailMap).bindPopup(`<b>🏠 ${HOME_YARD.name}</b>`));
+  mapLayers.push(L.marker(job.jobSite.coords,{icon:mkIcon('site')}).addTo(detailMap).bindPopup(`<b>📍 ${job.jobSite.name}</b>`));
+  (job.stopLocations||[]).forEach(s=>mapLayers.push(L.marker(s.coords,{icon:mkIcon('stop')}).addTo(detailMap).bindPopup(`<b>⚠️ ${s.label}</b>`)));
+
+  const all=[...(job.outbound||[]),...(job.returning||[]),HOME_YARD.coords,job.jobSite.coords];
+  if(all.length) detailMap.fitBounds(L.latLngBounds(all),{padding:[30,30]});
+  detailMap.invalidateSize();
+}
+
+function verifyCurrentJob(){
+  const job = JOBS.find(j=>j.id===currentJobId);
+  if(job){ job.status='verified'; job.flags=[]; job.summary='Verified manually.'; showDetail(currentJobId); }
+}
+
+function exportDetailGPS(){
+  const job = JOBS.find(j=>j.id===currentJobId); if(!job) return;
+  const rows=['leg,lat,lng,point,driver,asset,esn'];
+  (job.outbound||[]).forEach((pt,i)=>rows.push(`outbound,${pt[0]},${pt[1]},${i+1},"${job.driver}","${job.asset}",${job.esn}`));
+  (job.returning||[]).forEach((pt,i)=>rows.push(`return,${pt[0]},${pt[1]},${i+1},"${job.driver}","${job.asset}",${job.esn}`));
+  dlCSV(rows.join('\n'), `${job.id}_GPS.csv`);
+}
+
+// ── MANUAL VERIFY ─────────────────────────────────────────────────────────────
+function openMV(){
+  const s = getSettings();
+  document.getElementById('mv-esn').value='';
+  document.getElementById('mv-driver').value='';
+  document.getElementById('mv-date').value=new Date().toISOString().slice(0,10);
+  document.getElementById('mv-start').value='07:00';
+  document.getElementById('mv-end').value='17:00';
+  document.getElementById('mv-hrs').value='';
+  document.getElementById('mv-invoice').value='';
+  document.getElementById('mv-status').style.display='none';
+  document.getElementById('mv-form').style.opacity='1';
+  document.getElementById('mv-run').disabled=!s.proxyUrl;
+  document.getElementById('mv-run').textContent='🔍 Verify Job';
+  document.getElementById('mv-cancel').textContent='Cancel';
+  document.getElementById('mv-no-proxy').style.display=s.proxyUrl?'none':'block';
+  mvSetStep(1,'⏳','Waiting','pending');
+  mvSetStep(2,'⏳','Waiting','pending');
+  mvSetStep(3,'⏳','Waiting','pending');
+  document.getElementById('mvModal').classList.add('open');
+}
+function openManualVerify(){ openMV(); }
+function closeMV(){ document.getElementById('mvModal').classList.remove('open'); }
+function mvSetStep(n,icon,label,cls){
+  document.getElementById(`mv-i${n}`).textContent=icon;
+  document.getElementById(`mv-s${n}`).textContent=label;
+  document.getElementById(`mv-s${n}`).className=`proc-st ${cls}`;
+}
+
+function toUTC(dateStr, timeStr){
+  const [h,m]=timeStr.split(':').map(Number);
+  const d=new Date(dateStr+'T00:00:00');
+  d.setHours(h+5,m,0,0); // CDT = UTC-5
+  return d.toISOString();
+}
+
+async function runMV(){
+  const s = getSettings();
+  if(!s.proxyUrl) return;
+  const esn     = document.getElementById('mv-esn').value.trim();
+  const driver  = document.getElementById('mv-driver').value.trim();
+  const date    = document.getElementById('mv-date').value;
+  const start   = document.getElementById('mv-start').value;
+  const end     = document.getElementById('mv-end').value;
+  const repHrs  = document.getElementById('mv-hrs').value.trim();
+  const invoice = document.getElementById('mv-invoice').value.trim();
+
+  if(!esn){ document.getElementById('mv-esn').classList.add('error'); return; }
+  document.getElementById('mv-esn').classList.remove('error');
+  if(!date){ document.getElementById('mv-date').classList.add('error'); return; }
+  document.getElementById('mv-date').classList.remove('error');
+
+  document.getElementById('mv-run').disabled=true;
+  document.getElementById('mv-run').textContent='⏳ Working…';
+  document.getElementById('mv-form').style.opacity='.4';
+  document.getElementById('mv-status').style.display='block';
+
+  const proxy = s.proxyUrl.replace(/\/$/,'');
+
+  // Step 1: Asset lookup
+  mvSetStep(1,'🔍','Looking up…','running');
+  let finalEsn = esn;
+  let assetName = esn;
+  try {
+    const r = await fetch(`${proxy}/api?route=asset&id=${encodeURIComponent(esn)}`);
+    const d = await r.json();
+    if(d.found && d.esn){ finalEsn=d.esn; assetName=d.name||esn; mvSetStep(1,'✅',`ESN: ${finalEsn}`,'done'); }
+    else { mvSetStep(1,'⚠️','Asset not found — using as ESN','done'); }
+  } catch(e){ mvSetStep(1,'⚠️','Asset lookup skipped','done'); }
+
+  // Step 2: Readings
+  mvSetStep(2,'📡','Pulling GPS data…','running');
+  let readings=[];
+  try {
+    const fromUTC=toUTC(date,start), toUTC_=toUTC(date,end);
+    const url=`${proxy}/api?route=readings&esn=${encodeURIComponent(finalEsn)}&from=${encodeURIComponent(fromUTC)}&to=${encodeURIComponent(toUTC_)}&time_series=received`;
+    const r=await fetch(url);
+    const d=await r.json();
+    readings=d.readings||[];
+    mvSetStep(2,'✅',`${readings.length} readings pulled`,'done');
+  } catch(e){ mvSetStep(2,'❌','Readings API failed','error'); resetMV(); return; }
+
+  // Step 3: Analyse
+  mvSetStep(3,'⚙️','Analysing…','running');
+  await new Promise(r=>setTimeout(r,300));
+
+  try {
+    const dateLabel = new Date(date+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+    const job = buildJob({esn:finalEsn, assetName, driver, date:dateLabel, start, end, repHrs, invoice, readings});
+    JOBS.unshift(job);
+    renderList();
+    mvSetStep(3,'✅',`Done — ${readings.length} readings analysed`,'done');
+    await new Promise(r=>setTimeout(r,800));
+    closeMV();
+    showDetail(job.id);
+  } catch(e){
+    console.error('Analysis error:', e);
+    mvSetStep(3,'❌','Analysis failed: '+e.message,'error');
+    resetMV();
+  }
+}
+
+function resetMV(){
+  document.getElementById('mv-run').disabled=false;
+  document.getElementById('mv-run').textContent='🔍 Retry';
+  document.getElementById('mv-form').style.opacity='1';
+}
+
+function buildJob({esn, assetName, driver, date, start, end, repHrs, invoice, readings}){
+  const id = `JB-${Date.now().toString().slice(-8)}`;
+  const job = {
+    id, assetId:esn, driver:driver||'Unassigned', asset:assetName, esn,
+    date, status:'processing',
+    reportedHrs: repHrs ? repHrs+'h' : '—',
+    gpsHrs: '—', invoice: invoice ? '$'+parseFloat(invoice).toLocaleString() : '—',
+    arrReported:start, arrGPS:'—', depReported:end, depGPS:'—',
+    summary:'', flags:[], timeline:[], stopLocations:[],
+    gpsMetrics:{distance:'—',driveTime:'—',timeOnSite:'—',stops:0},
+    jobSite:{name:'Job Site',coords:[31.9973,-102.0779]},
+    outbound:[], returning:[]
+  };
+
+  if(!readings||readings.length===0){
+    job.status='flagged';
+    job.flags.push({severity:'medium',type:'No GPS Data',title:'No readings found',desc:'No GPS readings found for this ESN and time window. Check ESN and time range.'});
+    job.summary='No GPS readings found. Verify ESN and time range.';
+    return job;
+  }
+
+  // Parse real Geoforce reading format
+  // coordinates: [longitude, latitude] — swap to [lat, lng] for Leaflet
+  const pts = readings
+    .map(r=>({
+      lat: r.position?.coordinates?.[1] ?? null,
+      lng: r.position?.coordinates?.[0] ?? null,
+      ts:  new Date(r.timestamp||r.received).getTime(),
+      speed:   parseFloat(r.status?.speed||0),
+      stopped: r.status?.stopped==='true'||r.status?.stopped===true
+    }))
+    .filter(p=>p.lat!==null&&p.lng!==null&&!isNaN(p.ts))
+    .sort((a,b)=>a.ts-b.ts);
+
+  if(pts.length<2){
+    job.summary='Too few GPS points to analyse. Check time range.';
+    return job;
+  }
+
+  const first=pts[0], last=pts[pts.length-1];
+  const totalMs  = last.ts-first.ts;
+  const totalHrs = Math.round((totalMs/3600000)*10)/10;
+
+  job.gpsHrs  = totalHrs+'h';
+  job.arrGPS  = new Date(first.ts).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+  job.depGPS  = new Date(last.ts).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+  job.outbound = pts.map(p=>[p.lat,p.lng]);
+
+  // Detect stops > 15 min
+  const STOP_MS = 15*60*1000;
+  const stops=[]; let stopStart=null, stopLat=null, stopLng=null;
+  for(let i=0;i<pts.length;i++){
+    const p=pts[i];
+    if(p.stopped||p.speed<2){
+      if(!stopStart){stopStart=p.ts;stopLat=p.lat;stopLng=p.lng;}
+    } else {
+      if(stopStart){
+        const dur=p.ts-stopStart;
+        if(dur>STOP_MS) stops.push({coords:[stopLat,stopLng],durationMs:dur,
+          arrival:new Date(stopStart).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'}),
+          departure:new Date(p.ts).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'}),
+          durationStr:Math.round(dur/60000)+' min'});
+        stopStart=null;
+      }
+    }
+  }
+
+  job.stopLocations = stops.map(s=>({coords:s.coords,label:'Detected Stop'}));
+  job.gpsMetrics = {distance:'—',driveTime:'—',timeOnSite:totalHrs+'h',stops:stops.length};
+
+  job.timeline=[
+    {type:'yard',label:'Home Yard',address:'Midland, TX',arrival:job.arrGPS,departure:job.arrGPS,duration:'—',flagged:false},
+    ...stops.map(s=>({type:'stop',label:'Detected Stop',address:'—',arrival:s.arrival,departure:s.departure,duration:s.durationStr,flagged:true})),
+    {type:'site',label:'Job Site',address:'—',arrival:job.arrGPS,departure:job.depGPS,duration:totalHrs+'h',flagged:false},
+    {type:'yard',label:'Home Yard',address:'Midland, TX',arrival:job.depGPS,departure:'—',duration:'—',flagged:false}
+  ];
+
+  // Billing comparison
+  const repH=parseFloat(repHrs);
+  if(!isNaN(repH)){
+    const diff=Math.round((totalHrs-repH)*10)/10;
+    if(Math.abs(diff)>=0.5) job.flags.push({
+      severity:Math.abs(diff)>=1?'critical':'medium',
+      type:'Billing Mismatch',
+      title:`Hours discrepancy: ${diff>0?'+':''}${diff}h`,
+      desc:`Reported ${repH}h but GPS confirms ${totalHrs}h. Difference of ${Math.abs(diff)}h.`
+    });
+  }
+  if(stops.length>0) job.flags.push({
+    severity:'medium',type:'Unauthorized Stop',
+    title:`${stops.length} stop${stops.length>1?'s':''} detected`,
+    desc:stops.map(s=>`Stop of ${s.durationStr} at ${s.arrival}`).join('; ')
+  });
+
+  job.status  = job.flags.length>0 ? 'flagged' : 'verified';
+  job.summary = job.flags.length>0
+    ? `GPS analysis found ${job.flags.length} issue${job.flags.length>1?'s':''}. Review before approving invoice.`
+    : `GPS data analysed. ${totalHrs}h confirmed. No unauthorized stops detected.`;
+
+  return job;
+}
+
+// ── UPLOAD / OCR ──────────────────────────────────────────────────────────────
+const MOCK_ASSET_DB={
+  'UNIT-14':{esn:'204206514',vehicle:'Unit 14 — Ford F-450'},
+  'UNIT-22':{esn:'204206516',vehicle:'Unit 22 — Ford F-350'},
+  'UNIT-07':{esn:'204206515',vehicle:'Unit 07 — Chevy Silverado 3500'},
+  'UNIT-03':{esn:'204206510',vehicle:'Unit 03 — Ford F-250'},
+  'UNIT-09':{esn:'204206511',vehicle:'Unit 09 — Ram 3500'},
+  'UNIT-18':{esn:'204206512',vehicle:'Unit 18 — Ford F-450'},
+  'UNIT-05':{esn:'204206513',vehicle:'Unit 05 — Chevy Silverado 2500'},
+  'UNIT-11':{esn:'204206517',vehicle:'Unit 11 — Ford F-350'},
+  'UNIT-19':{esn:'204206518',vehicle:'Unit 19 — Ram 2500'},
+};
+
+let upStep=1, upFiles=[];
+function openUpload(){ upStep=1; upFiles=[]; resetUpload(); document.getElementById('uploadModal').classList.add('open'); }
+function closeUpload(){ document.getElementById('uploadModal').classList.remove('open'); }
+
+function resetUpload(){
+  ['up-s1','up-s2','up-s3'].forEach((id,i)=>document.getElementById(id).style.display=i===0?'':'none');
+  document.getElementById('upFiles').value='';
+  document.getElementById('up-file-list').style.display='none';
+  document.getElementById('up-next').disabled=true;
+  document.getElementById('up-next').textContent='📤 Process Tickets';
+  document.getElementById('up-cancel').textContent='Cancel';
+  document.getElementById('up-note').textContent='Select ticket images to begin';
+  setUpStep(1);
+}
+
+function setUpStep(a){
+  [1,2,3].forEach(n=>{
+    const el=document.getElementById(`ms${n}`);
+    el.className='mstep'+(n<a?' done':n===a?' active':'');
+    el.querySelector('.mstep-n').textContent=n<a?'✓':n;
+  });
+}
+
+function onUpFiles(event){
+  upFiles=Array.from(event.target.files); if(!upFiles.length) return;
+  document.getElementById('up-file-list').style.display='block';
+  document.getElementById('up-file-list').innerHTML=upFiles.map(f=>`
+    <div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--bg);border:1px solid var(--border);border-radius:5px;font-size:12px;margin-bottom:4px;">
+      <span>📄</span><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${f.name}</span>
+      <span style="color:var(--text-dim);font-size:10px;">${(f.size/1024).toFixed(0)} KB</span>
+    </div>`).join('');
+  document.getElementById('up-next').disabled=false;
+  document.getElementById('up-next').textContent=`📤 Process ${upFiles.length} Ticket${upFiles.length>1?'s':''}`;
+  document.getElementById('up-note').textContent=`✅ ${upFiles.length} ticket${upFiles.length>1?'s':''} ready`;
+}
+
+function upNext(){
+  if(upStep===1&&upFiles.length) runUpload();
+  else if(upStep===3) closeUpload();
+}
+
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+
+function parseOCR(text){
+  const lines=text.split('\n').map(l=>l.trim()).filter(Boolean);
+  const r={jobNumber:'',date:'',startTime:'',endTime:'',assetId:'',driverName:'',customerName:'',jobSite:''};
+  for(const line of lines){
+    if(!r.jobNumber){const m=line.match(/(?:JOB\s*(?:NO|NUM|#)?[:\s]*|WO\s*#?\s*)(\w[\w\-]{2,})/i);if(m)r.jobNumber=m[1].trim();}
+    if(!r.date){const m=line.match(/\b(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}|(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\w*\.?\s+\d{1,2},?\s*\d{4})\b/i);if(m)r.date=m[1];}
+    const times=line.match(/\b(\d{1,2}:\d{2}\s*(?:AM|PM))/gi);
+    if(times){if(!r.startTime)r.startTime=times[0];if(times[1]&&!r.endTime)r.endTime=times[1];}
+    if(!r.assetId){
+      const m1=line.match(/(?:ASSET\s*ID|TRUCK|UNIT|VEHICLE)[^:]*:\s*(?:Unit\s*|Truck\s*)?([A-Z0-9\-]{1,10})/i);
+      if(m1)r.assetId='UNIT-'+m1[1].replace(/^UNIT[-\s]*/i,'').trim().toUpperCase();
+      if(!r.assetId){const m2=line.match(/\b(?:Unit|Truck)\s+(\d{1,4})\b/i);if(m2)r.assetId='UNIT-'+m2[1];}
+    }
+    if(!r.driverName){const m=line.match(/(?:DRIVER\s*(?:NAME)?|OPERATOR|TECHNICIAN|TECH)[:\s]+([A-Za-z]+(?:\s+[A-Za-z]+)+)/i);if(m){const v=m[1].trim();if(v.length>2&&!/^(name|date|time|unit|truck|job)$/i.test(v))r.driverName=v;}}
+    if(!r.customerName){const m=line.match(/(?:CUSTOMER\s*(?:NAME)?|CLIENT|COMPANY)[:\s]+(.+)/i);if(m)r.customerName=m[1].trim();}
+    if(!r.jobSite){const m=line.match(/(?:LOCATION|JOB\s*SITE|SITE|WELL|FIELD)[:\s]+(.+)/i);if(m)r.jobSite=m[1].trim();}
+  }
+  return r;
+}
+
+function upSetRow(id,cls,icon,name,ad,st,sc){
+  const row=document.getElementById(id); if(!row) return;
+  row.className=`b-row ${cls}`;
+  row.innerHTML=`<div style="font-size:13px;text-align:center">${icon}</div><div class="b-name">${name}</div><div class="b-fld">${ad}</div><div class="b-st b-${sc}">${st}</div>`;
+}
+
+async function processUpFile(file, rowId){
+  upSetRow(rowId,'processing','🔎',file.name,'—','OCR 0%','proc');
+  let ocr={}, ocrFailed=false;
+  try{
+    const url=await new Promise((res,rej)=>{const rd=new FileReader();rd.onload=e=>res(e.target.result);rd.onerror=rej;rd.readAsDataURL(file);});
+    const w=await Tesseract.createWorker('eng',1,{
+      workerPath:'https://cdn.jsdelivr.net/npm/tesseract.js@4.1.1/dist/worker.min.js',
+      langPath:'https://cdn.jsdelivr.net/npm/tesseract.js-lang@4.0.0/lang/',
+      corePath:'https://cdn.jsdelivr.net/npm/tesseract.js-core@4.0.4/tesseract-core-simd-lstm.wasm.js',
+      logger:m=>{if(m.status==='recognizing text')upSetRow(rowId,'processing','🔎',file.name,'—',`OCR ${Math.round((m.progress||0)*100)}%`,'proc');}
+    });
+    const{data:{text}}=await w.recognize(url);
+    await w.terminate();
+    console.log('OCR TEXT:', text);
+    ocr=parseOCR(text);
+  }catch(e){ocrFailed=true;ocr={};}
+
+  upSetRow(rowId,'processing','🔍',file.name,'Asset lookup…','API…','proc');
+  await sleep(600);
+  const aid=(ocr.assetId||'').toUpperCase().replace(/\s+/g,'-');
+  const adat=MOCK_ASSET_DB[aid]||{esn:'—',vehicle:aid||'Unknown'};
+  await sleep(500);
+
+  const miss=[];
+  if(!ocr.jobNumber)miss.push('Job #');
+  if(!ocr.assetId)miss.push('Asset ID');
+  if(!ocr.driverName)miss.push('Driver');
+  const nr=miss.length>0||ocrFailed;
+
+  // Build job using unified format
+  const job={
+    id:ocr.jobNumber||`TK-SCAN-${Date.now().toString().slice(-6)}`,
+    assetId:ocr.assetId||aid||'TBD',
+    driver:ocr.driverName||'Unassigned',
+    asset:adat.vehicle, esn:adat.esn,
+    date:ocr.date||new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}),
+    status:nr?'flagged':'processing',
+    reportedHrs:'—', gpsHrs:'—',
+    invoice:'—',
+    arrReported:ocr.startTime||'—', arrGPS:'—',
+    depReported:ocr.endTime||'—', depGPS:'—',
+    summary:nr
+      ?(ocrFailed?`OCR failed for "${file.name}". Enter all fields manually.`:`Missing from OCR: ${miss.join(', ')}.`)
+      :'Ticket scanned — awaiting GPS verification.',
+    flags:nr?[{severity:'medium',type:ocrFailed?'OCR Failed':'Incomplete Ticket',title:ocrFailed?'OCR could not read ticket':'Missing fields from OCR',desc:ocrFailed?'Image may be blurry or low contrast.':`Could not extract: ${miss.join(', ')}.`}]:[],
+    timeline:[{type:'yard',label:'Job Created from Ticket',address:'—',arrival:ocr.startTime||'—',departure:'—',duration:'—',flagged:false}],
+    gpsMetrics:{distance:'—',driveTime:'—',timeOnSite:'—',stops:0},
+    jobSite:{name:ocr.jobSite||'Job Site TBD',coords:[31.9973,-102.0779]},
+    outbound:[], returning:[], stopLocations:[]
+  };
+
+  JOBS.unshift(job);
+  renderList();
+
+  if(nr){upSetRow(rowId,'done-flag','⚠️',file.name,adat.vehicle,ocrFailed?'⚠️ OCR failed':`⚠️ Missing: ${miss.join(', ')}`,'flag');return{status:'review',file:file.name,job};}
+  upSetRow(rowId,'done-ok','✅',file.name,`${adat.vehicle} · ${ocr.driverName}`,`✅ Saved`,'ok');
+  return{status:'ok',file:file.name,job};
+}
+
+async function runUpload(){
+  upStep=2; setUpStep(2);
+  document.getElementById('up-s1').style.display='none';
+  document.getElementById('up-s2').style.display='';
+  document.getElementById('up-next').disabled=true;
+  document.getElementById('up-next').textContent='⏳ Processing…';
+  document.getElementById('up-note').textContent=`Processing ${upFiles.length} tickets…`;
+
+  document.getElementById('up-rows').innerHTML=upFiles.map((f,i)=>`
+    <div class="b-row" id="up-row-${i}">
+      <div style="text-align:center">⏳</div><div class="b-name">${f.name}</div>
+      <div class="b-fld">—</div><div class="b-st">Queued</div>
+    </div>`).join('');
+
+  const results=[];
+  for(let i=0;i<upFiles.length;i++){
+    document.getElementById('up-bar').style.width=Math.round(i/upFiles.length*100)+'%';
+    document.getElementById('up-cnt').textContent=`${i}/${upFiles.length}`;
+    document.getElementById('up-lbl').textContent=`Processing ticket ${i+1} of ${upFiles.length}…`;
+    results.push(await processUpFile(upFiles[i],`up-row-${i}`));
+  }
+  document.getElementById('up-bar').style.width='100%';
+  document.getElementById('up-cnt').textContent=`${upFiles.length}/${upFiles.length}`;
+  document.getElementById('up-lbl').textContent='✅ All done!';
+  await sleep(400);
+
+  upStep=3; setUpStep(3);
+  document.getElementById('up-s2').style.display='none';
+  document.getElementById('up-s3').style.display='';
+
+  const saved=results.filter(r=>r.status==='ok').length;
+  const rev  =results.filter(r=>r.status==='review').length;
+  const errs =results.filter(r=>r.status==='error').length;
+  document.getElementById('up-ok').textContent=saved;
+  document.getElementById('up-rev').textContent=rev;
+  document.getElementById('up-err').textContent=errs;
+
+  const sm={ok:['done-ok','✅','ok','✅ Saved'],review:['done-flag','⚠️','flag','⚠️ Flagged'],error:['done-err','❌','err','❌ Failed']};
+  document.getElementById('up-done-rows').innerHTML=results.map(r=>{
+    const[c,ic,sc,st]=sm[r.status];
+    return`<div class="b-row ${c}"><div style="font-size:13px;text-align:center">${ic}</div><div class="b-name">${r.file}</div><div class="b-fld">${r.job?(r.job.asset+' · '+r.job.driver):'—'}</div><div class="b-st b-${sc}">${st}</div></div>`;
+  }).join('');
+
+  document.getElementById('up-next').disabled=false;
+  document.getElementById('up-next').textContent='✓ Done';
+  document.getElementById('up-cancel').textContent='Close';
+  document.getElementById('up-note').textContent=`${saved} saved · ${rev} flagged · ${errs} failed`;
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+updateSettingsBtn();
+renderList();
+</script>
 </body>
 </html>
